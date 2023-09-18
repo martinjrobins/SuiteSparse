@@ -29,7 +29,7 @@ include ( SuiteSparsePolicy )
 
 # lower-case list of all projects that can be built by this root CMake file
 set ( SUITESPARSE_ALL_PROJECTS
-    "suitesparse_config;mongoose;amd;btf;camd;ccolamd;colamd;cholmod;cxsparse;ldl;klu;umfpack;rbio;spqr;graphblas" )
+    "suitesparse_config;mongoose;amd;btf;camd;ccolamd;colamd;cholmod;cxsparse;ldl;klu;umfpack;rbio;spqr;graphblas;spex" )
 
 # lower-case list of extra projects that can be built by this root CMake file
 set ( SUITESPARSE_EXTRA_PROJECTS
@@ -108,27 +108,30 @@ endif ( )
 
 if ( "cholmod" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "ldl" IN_LIST SUITESPARSE_ENABLE_PROJECTS
-        OR "umfpack" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+        OR "umfpack" IN_LIST SUITESPARSE_ENABLE_PROJECTS
+        OR "spex" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
     if ( NOT "amd" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
         message ( STATUS "Adding \"amd\" to the list of built targets." )
         list ( APPEND SUITESPARSE_ENABLE_PROJECTS "amd" )
     endif ( )
 endif ( )
 
-if ( "cholmod" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+if ( "cholmod" IN_LIST SUITESPARSE_ENABLE_PROJECTS
+        OR "spex" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
     if ( NOT "colamd" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
         message ( STATUS "Adding \"colamd\" to the list of built targets." )
         list ( APPEND SUITESPARSE_ENABLE_PROJECTS "colamd" )
     endif ( )
-    if ( NOT NCAMD )
-        if ( NOT "camd" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
-            message ( STATUS "Adding \"camd\" to the list of built targets." )
-            list ( APPEND SUITESPARSE_ENABLE_PROJECTS "camd" )
-        endif ( )
-        if ( NOT "ccolamd" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
-            message ( STATUS "Adding \"ccolamd\" to the list of built targets." )
-            list ( APPEND SUITESPARSE_ENABLE_PROJECTS "ccolamd" )
-        endif ( )
+endif ( )
+
+if ( NOT NCAMD AND "cholmod" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+    if ( NOT "camd" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+        message ( STATUS "Adding \"camd\" to the list of built targets." )
+        list ( APPEND SUITESPARSE_ENABLE_PROJECTS "camd" )
+    endif ( )
+    if ( NOT "ccolamd" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+        message ( STATUS "Adding \"ccolamd\" to the list of built targets." )
+        list ( APPEND SUITESPARSE_ENABLE_PROJECTS "ccolamd" )
     endif ( )
 endif ( )
 
@@ -160,7 +163,8 @@ if ( "mongoose" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "rbio" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "suitesparse_gpuruntime" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "gpuqrengine" IN_LIST SUITESPARSE_ENABLE_PROJECTS
-        OR "spqr" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+        OR "spqr" IN_LIST SUITESPARSE_ENABLE_PROJECTS
+        OR "spex" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
     if ( NOT "suitesparse_config" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
         message ( STATUS "Adding \"suitesparse_config\" to the list of built targets." )
         list ( APPEND SUITESPARSE_ENABLE_PROJECTS "suitesparse_config" )
@@ -237,6 +241,10 @@ endif ( )
 
 if ( "graphblas" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
     add_subdirectory ( "GraphBLAS" )
+endif ( )
+
+if ( "spex" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+    add_subdirectory ( "SPEX" )
 endif ( )
 
 #-------------------------------------------------------------------------------

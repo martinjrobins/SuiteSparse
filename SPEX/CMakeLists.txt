@@ -2,7 +2,7 @@
 # SuiteSparse/SPEX/CMakeLists.txt:  cmake for SPEX
 #-------------------------------------------------------------------------------
 
-# Copyright (c) 1996-2022, Timothy A. Davis, Patrick Amestoy, Iain Duff.
+# Copyright (c) 1996-2023, Timothy A. Davis, Patrick Amestoy, Iain Duff.
 # All Rights Reserved.
 # SPDX-License-Identifier: BSD-3-clause
 
@@ -23,16 +23,6 @@ message ( STATUS "Building SPEX version: v"
     ${SPEX_VERSION_SUB} " (" ${SPEX_DATE} ")" )
 
 #-------------------------------------------------------------------------------
-# SuiteSparse policies
-#-------------------------------------------------------------------------------
-
-set ( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-    ${CMAKE_SOURCE_DIR}/cmake_modules
-    ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/cmake_modules )
-
-include ( SuiteSparsePolicy )
-
-#-------------------------------------------------------------------------------
 # define the project
 #-------------------------------------------------------------------------------
 
@@ -41,25 +31,49 @@ project ( spex
     LANGUAGES C )
 
 #-------------------------------------------------------------------------------
+# SuiteSparse policies
+#-------------------------------------------------------------------------------
+
+set ( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+    ${PROJECT_SOURCE_DIR}/cmake_modules
+    ${PROJECT_SOURCE_DIR}/../SuiteSparse_config/cmake_modules )
+
+include ( SuiteSparsePolicy )
+
+#-------------------------------------------------------------------------------
 # find library dependencies
 #-------------------------------------------------------------------------------
 
-find_package ( SuiteSparse_config 7.2.0
-    PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/build NO_DEFAULT_PATH )
-if ( NOT TARGET SuiteSparse::SuiteSparseConfig )
-    find_package ( SuiteSparse_config 7.2.0 REQUIRED )
-endif ( )
+if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
+    find_package ( SuiteSparse_config 7.2.0
+        PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/build NO_DEFAULT_PATH )
+    if ( NOT TARGET SuiteSparse::SuiteSparseConfig )
+        find_package ( SuiteSparse_config 7.2.0 REQUIRED )
+    endif ( )
+    add_library ( SuiteSparseConfig ALIAS SuiteSparse::SuiteSparseConfig )
+    if ( NOT NSTATIC AND TARGET SuiteSparse::SuiteSparseConfig_static )
+        add_library ( SuiteSparseConfig_static ALIAS SuiteSparse::SuiteSparseConfig_static )
+    endif ( )
 
-find_package ( COLAMD 3.2.0
-    PATHS ${CMAKE_SOURCE_DIR}/../COLAMD/build NO_DEFAULT_PATH )
-if ( NOT TARGET SuiteSparse::COLAMD )
-    find_package ( COLAMD 3.2.0 REQUIRED )
-endif ( )
+    find_package ( AMD 3.2.0
+        PATHS ${CMAKE_SOURCE_DIR}/../AMD/build NO_DEFAULT_PATH )
+    if ( NOT TARGET SuiteSparse::AMD )
+        find_package ( AMD 3.2.0 REQUIRED )
+    endif ( )
+    add_library ( AMD ALIAS SuiteSparse::AMD )
+    if ( NOT NSTATIC AND TARGET SuiteSparse::AMD_static )
+        add_library ( AMD_static ALIAS SuiteSparse::AMD_static )
+    endif ( )
 
-find_package ( AMD 3.2.0
-    PATHS ${CMAKE_SOURCE_DIR}/../AMD/build NO_DEFAULT_PATH )
-if ( NOT TARGET SuiteSparse::AMD )
-    find_package ( AMD 3.2.0 REQUIRED )
+    find_package ( COLAMD 3.2.0
+        PATHS ${CMAKE_SOURCE_DIR}/../COLAMD/build NO_DEFAULT_PATH )
+    if ( NOT TARGET SuiteSparse::COLAMD )
+        find_package ( COLAMD 3.2.0 REQUIRED )
+    endif ( )
+    add_library ( COLAMD ALIAS SuiteSparse::COLAMD )
+    if ( NOT NSTATIC AND TARGET SuiteSparse::COLAMD_static )
+        add_library ( COLAMD_static ALIAS SuiteSparse::COLAMD_static )
+    endif ( )
 endif ( )
 
 find_package ( GMP 6.1.2 REQUIRED )     # from SPEX/cmake_modules
@@ -135,34 +149,34 @@ endif ( )
 #-------------------------------------------------------------------------------
 
 # SuiteSparseConfig:
-target_link_libraries ( SPEX PRIVATE SuiteSparse::SuiteSparseConfig )
+target_link_libraries ( SPEX PRIVATE SuiteSparseConfig )
 target_include_directories ( SPEX PUBLIC
-    "$<TARGET_PROPERTY:SuiteSparse::SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
+    "$<TARGET_PROPERTY:SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
 if ( NOT NSTATIC )
-    if ( TARGET SuiteSparse::SuiteSparseConfig_static )
-        target_link_libraries ( SPEX_static PUBLIC SuiteSparse::SuiteSparseConfig_static )
+    if ( TARGET SuiteSparseConfig_static )
+        target_link_libraries ( SPEX_static PUBLIC SuiteSparseConfig_static )
     else ( )
-        target_link_libraries ( SPEX_static PUBLIC SuiteSparse::SuiteSparseConfig )
+        target_link_libraries ( SPEX_static PUBLIC SuiteSparseConfig )
     endif ( )
 endif ( )
 
 # AMD:
-target_link_libraries ( SPEX PRIVATE SuiteSparse::AMD )
+target_link_libraries ( SPEX PRIVATE AMD )
 if ( NOT NSTATIC )
-    if ( TARGET SuiteSparse::AMD_static )
-        target_link_libraries ( SPEX_static PUBLIC SuiteSparse::AMD_static )
+    if ( TARGET AMD_static )
+        target_link_libraries ( SPEX_static PUBLIC AMD_static )
     else ( )
-        target_link_libraries ( SPEX_static PUBLIC SuiteSparse::AMD )
+        target_link_libraries ( SPEX_static PUBLIC AMD )
     endif ( )
 endif ( )
 
 # COLAMD:
-target_link_libraries ( SPEX PRIVATE SuiteSparse::COLAMD )
+target_link_libraries ( SPEX PRIVATE COLAMD )
 if ( NOT NSTATIC )
-    if ( TARGET SuiteSparse::COLAMD_static )
-        target_link_libraries ( SPEX_static PUBLIC SuiteSparse::COLAMD_static )
+    if ( TARGET COLAMD_static )
+        target_link_libraries ( SPEX_static PUBLIC COLAMD_static )
     else ( )
-        target_link_libraries ( SPEX_static PUBLIC SuiteSparse::COLAMD )
+        target_link_libraries ( SPEX_static PUBLIC COLAMD )
     endif ( )
 endif ( )
 
@@ -326,5 +340,6 @@ endif ( )
 # report status
 #-------------------------------------------------------------------------------
 
-include ( SuiteSparseReport )
-
+if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
+    include ( SuiteSparseReport )
+endif ( )
