@@ -2,7 +2,7 @@
 # SuiteSparse/CHOLMOD/CMakeLists.txt:  cmake for CHOLMOD
 #-------------------------------------------------------------------------------
 
-# CHOLMOD: Copyright (c) 2005-2022, Timothy A. Davis.
+# CHOLMOD: Copyright (c) 2005-2023, Timothy A. Davis.
 # Copyright and license varies by module.
 
 #-------------------------------------------------------------------------------
@@ -23,12 +23,20 @@ message ( STATUS "Building CHOLMOD version: v"
     ${CHOLMOD_VERSION_SUB} " (" ${CHOLMOD_DATE} ")" )
 
 #-------------------------------------------------------------------------------
+# define the project
+#-------------------------------------------------------------------------------
+
+project ( cholmod
+        VERSION "${CHOLMOD_VERSION_MAJOR}.${CHOLMOD_VERSION_MINOR}.${CHOLMOD_VERSION_SUB}"
+        LANGUAGES C )
+
+#-------------------------------------------------------------------------------
 # SuiteSparse policies
 #-------------------------------------------------------------------------------
 
 set ( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-    ${CMAKE_SOURCE_DIR}/cmake_modules
-    ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/cmake_modules )
+    ${PROJECT_SOURCE_DIR}/cmake_modules
+    ${PROJECT_SOURCE_DIR}/../SuiteSparse_config/cmake_modules )
 
 option ( ENABLE_CUDA "Enable CUDA acceleration" on )
 
@@ -50,20 +58,9 @@ if ( NOT HAVE_SSIZE_T )
     add_compile_definitions ( NO_SSIZE_T )
 endif ( )
 
-#-------------------------------------------------------------------------------
-# define the project
-#-------------------------------------------------------------------------------
-
 if ( SUITESPARSE_CUDA )
     # CHOLMOD with CUDA
-    project ( cholmod
-            VERSION "${CHOLMOD_VERSION_MAJOR}.${CHOLMOD_VERSION_MINOR}.${CHOLMOD_VERSION_SUB}"
-            LANGUAGES CUDA C CXX )
-else ( )
-    # CHOLMOD without CUDA
-    project ( cholmod
-            VERSION "${CHOLMOD_VERSION_MAJOR}.${CHOLMOD_VERSION_MINOR}.${CHOLMOD_VERSION_SUB}"
-            LANGUAGES C )
+    enable_language ( CUDA CXX )
 endif ( )
 
 #-------------------------------------------------------------------------------
@@ -78,22 +75,36 @@ else ( )
     find_package ( OpenMP )
 endif ( )
 
-find_package ( SuiteSparse_config 7.2.0
-    PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/build NO_DEFAULT_PATH )
-if ( NOT TARGET SuiteSparse::SuiteSparseConfig )
-    find_package ( SuiteSparse_config 7.2.0 REQUIRED )
-endif ( )
+if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
+    find_package ( SuiteSparse_config 7.2.0
+        PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/build NO_DEFAULT_PATH )
+    if ( NOT TARGET SuiteSparse::SuiteSparseConfig )
+        find_package ( SuiteSparse_config 7.2.0 REQUIRED )
+    endif ( )
+    add_library ( SuiteSparseConfig ALIAS SuiteSparse::SuiteSparseConfig )
+    if ( NOT NSTATIC AND TARGET SuiteSparse::SuiteSparseConfig_static )
+        add_library ( SuiteSparseConfig_static ALIAS SuiteSparse::SuiteSparseConfig_static )
+    endif ( )
 
-find_package ( COLAMD 3.2.0
-    PATHS ${CMAKE_SOURCE_DIR}/../COLAMD/build NO_DEFAULT_PATH )
-if ( NOT TARGET SuiteSparse::COLAMD )
-    find_package ( COLAMD 3.2.0 REQUIRED )
-endif ( )
+    find_package ( AMD 3.2.0
+        PATHS ${CMAKE_SOURCE_DIR}/../AMD/build NO_DEFAULT_PATH )
+    if ( NOT TARGET SuiteSparse::AMD )
+        find_package ( AMD 3.2.0 REQUIRED )
+    endif ( )
+    add_library ( AMD ALIAS SuiteSparse::AMD )
+    if ( NOT NSTATIC AND TARGET SuiteSparse::AMD_static )
+        add_library ( AMD_static ALIAS SuiteSparse::AMD_static )
+    endif ( )
 
-find_package ( AMD 3.2.0
-    PATHS ${CMAKE_SOURCE_DIR}/../AMD/build NO_DEFAULT_PATH )
-if ( NOT TARGET SuiteSparse::AMD )
-    find_package ( AMD 3.2.0 REQUIRED )
+    find_package ( COLAMD 3.2.0
+        PATHS ${CMAKE_SOURCE_DIR}/../COLAMD/build NO_DEFAULT_PATH )
+    if ( NOT TARGET SuiteSparse::COLAMD )
+        find_package ( COLAMD 3.2.0 REQUIRED )
+    endif ( )
+    add_library ( COLAMD ALIAS SuiteSparse::COLAMD )
+    if ( NOT NSTATIC AND TARGET SuiteSparse::COLAMD_static )
+        add_library ( COLAMD_static ALIAS SuiteSparse::COLAMD_static )
+    endif ( )
 endif ( )
 
 #-------------------------------------------------------------------------------
@@ -124,7 +135,7 @@ endif ( )
 
     option ( NCHECK "ON: do not use Check Module.  OFF (default): use Check Module" off )
 
-    if ( NOT EXISTS ${CMAKE_SOURCE_DIR}/Check )
+    if ( NOT EXISTS ${PROJECT_SOURCE_DIR}/Check )
         # Check module does not appear so don't use it
         set ( NCHECK true )
     endif ( )
@@ -139,7 +150,7 @@ endif ( )
 
     option ( NMATRIXOPS "ON: do not use MatrixOps Module.  OFF (default): use MatrixOps Module" off )
 
-    if ( NOT EXISTS ${CMAKE_SOURCE_DIR}/MatrixOps )
+    if ( NOT EXISTS ${PROJECT_SOURCE_DIR}/MatrixOps )
         # MatrixOps module does not appear so don't use it
         set ( NMATRIXOPS true )
     endif ( )
@@ -154,7 +165,7 @@ endif ( )
 
     option ( NCHOLESKY "ON: do not use Cholesky Module.  OFF (default): use Cholesky Module" off )
 
-    if ( NOT EXISTS ${CMAKE_SOURCE_DIR}/Cholesky )
+    if ( NOT EXISTS ${PROJECT_SOURCE_DIR}/Cholesky )
         # Cholesky module does not appear so don't use it
         set ( NCHOLESKY true )
     endif ( )
@@ -172,7 +183,7 @@ endif ( )
 
     option ( NMODIFY "ON: do not use Modify Module.  OFF (default): use Modify Module" off )
 
-    if ( NOT EXISTS ${CMAKE_SOURCE_DIR}/Modify )
+    if ( NOT EXISTS ${PROJECT_SOURCE_DIR}/Modify )
         # Modify module does not appear so don't use it
         set ( NMODIFY true )
     endif ( )
@@ -185,7 +196,7 @@ endif ( )
     # interfaces to CAMD and CCOLAMD
     #---------------------------------------------------------------------------
 
-    option ( NCAMD "ON: do not use CAMD/CCOLAMD.  OFF (default): use CAMD/CCOLAMD" off )
+    option ( NCAMD "ON: do not use CAMD/CCOLAMD.  OFF (default): use CAMD/CCOLAMD" OFF )
 
     # The CHOLMOD interfaces to CAMD and CCOLAMD are in the Partition module
     # (cholmod_camd, cholmod_ccolamd, cholmod_csymamd).  The Partition module
@@ -194,18 +205,30 @@ endif ( )
     # future, the CAMD and CCOLAMD interfaces will be split into their own
     # module to make this dependency more clear.
 
-    if ( NOT NCAMD )
+    if ( NOT NCAMD AND NOT SUITESPARSE_ROOT_CMAKELISTS )
         # find CAMD and CCOLAMD
         find_package ( CAMD 3.2.0
             PATHS ${CMAKE_SOURCE_DIR}/../CAMD/build NO_DEFAULT_PATH )
         if ( NOT TARGET SuiteSparse::CAMD )
             find_package ( CAMD 3.2.0 )
         endif ( )
+        if ( CAMD_FOUND )
+            add_library ( CAMD ALIAS SuiteSparse::CAMD )
+            if ( NOT NSTATIC AND TARGET SuiteSparse::CAMD_static )
+                add_library ( CAMD_static ALIAS SuiteSparse::CAMD_static )
+            endif ( )
+        endif ( )
 
         find_package ( CCOLAMD 3.2.0
             PATHS ${CMAKE_SOURCE_DIR}/../CCOLAMD/build NO_DEFAULT_PATH )
         if ( NOT TARGET SuiteSparse::CCOLAMD )
             find_package ( CCOLAMD 3.2.0 )
+        endif ( )
+        if ( CCOLAMD_FOUND )
+            add_library ( CCOLAMD ALIAS SuiteSparse::CCOLAMD )
+            if ( NOT NSTATIC AND TARGET SuiteSparse::SuiteSparseConfig_static )
+                add_library ( CCOLAMD_static ALIAS SuiteSparse::CCOLAMD_static )
+            endif ( )
         endif ( )
 
         if ( NOT CAMD_FOUND OR NOT CCOLAMD_FOUND )
@@ -226,7 +249,7 @@ endif ( )
 
     option ( NPARTITION "ON: do not use METIS.  OFF (default): use METIS" off )
 
-    if ( NOT EXISTS ${CMAKE_SOURCE_DIR}/Partition )
+    if ( NOT EXISTS ${PROJECT_SOURCE_DIR}/Partition )
         # Partition module does not appear so don't use it.  Since this
         # folder also includes the CAMD and CCOLAMD interfaces, NCAMD must
         # be set true here as well.
@@ -249,7 +272,7 @@ endif ( )
 
     option ( NSUPERNODAL "ON: do not use Supernodal Module.  OFF (default): use Supernodal Module" off )
 
-    if ( NOT EXISTS ${CMAKE_SOURCE_DIR}/Supernodal )
+    if ( NOT EXISTS ${PROJECT_SOURCE_DIR}/Supernodal )
         # Supernodal module does not appear so don't use it
         set ( NSUPERNODAL true )
     endif ( )
@@ -291,7 +314,7 @@ configure_file ( "Config/cholmod_version.tex.in"
 #-------------------------------------------------------------------------------
 
 include_directories ( Check Cholesky Core MatrixOps Modify Partition
-    Supernodal Include ${CMAKE_SOURCE_DIR} )
+    Supernodal Include ${PROJECT_SOURCE_DIR} )
 
 #-------------------------------------------------------------------------------
 # dynamic cholmod library properties
@@ -356,14 +379,14 @@ endif ( )
 #-------------------------------------------------------------------------------
 
 # SuiteSparseConfig:
-target_link_libraries ( CHOLMOD PRIVATE SuiteSparse::SuiteSparseConfig )
+target_link_libraries ( CHOLMOD PRIVATE SuiteSparseConfig )
 target_include_directories ( CHOLMOD PUBLIC
-    "$<TARGET_PROPERTY:SuiteSparse::SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
+    "$<TARGET_PROPERTY:SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
 if ( NOT NSTATIC )
-    if ( TARGET SuiteSparse::SuiteSparseConfig_static )
-        target_link_libraries ( CHOLMOD_static PUBLIC SuiteSparse::SuiteSparseConfig_static )
+    if ( TARGET SuiteSparseConfig_static )
+        target_link_libraries ( CHOLMOD_static PUBLIC SuiteSparseConfig_static )
     else ( )
-        target_link_libraries ( CHOLMOD_static PUBLIC SuiteSparse::SuiteSparseConfig )
+        target_link_libraries ( CHOLMOD_static PUBLIC SuiteSparseConfig )
     endif ( )
 endif ( )
 
@@ -398,22 +421,22 @@ endif ( )
         list ( APPEND CHOLMOD_STATIC_LIBS "m" )
 
 # AMD:
-target_link_libraries ( CHOLMOD PRIVATE SuiteSparse::AMD )
+target_link_libraries ( CHOLMOD PRIVATE AMD )
 if ( NOT NSTATIC )
-    if ( TARGET SuiteSparse::AMD_static )
-        target_link_libraries ( CHOLMOD_static PUBLIC SuiteSparse::AMD_static )
+    if ( TARGET AMD_static )
+        target_link_libraries ( CHOLMOD_static PUBLIC AMD_static )
     else ( )
-        target_link_libraries ( CHOLMOD_static PUBLIC SuiteSparse::AMD )
+        target_link_libraries ( CHOLMOD_static PUBLIC AMD )
     endif ( )
 endif ( )
 
 # COLAMD:
-target_link_libraries ( CHOLMOD PRIVATE SuiteSparse::COLAMD )
+target_link_libraries ( CHOLMOD PRIVATE COLAMD )
 if ( NOT NSTATIC )
-    if ( TARGET SuiteSparse::COLAMD_static )
-        target_link_libraries ( CHOLMOD_static PUBLIC SuiteSparse::COLAMD_static )
+    if ( TARGET COLAMD_static )
+        target_link_libraries ( CHOLMOD_static PUBLIC COLAMD_static )
     else ( )
-        target_link_libraries ( CHOLMOD_static PUBLIC SuiteSparse::COLAMD )
+        target_link_libraries ( CHOLMOD_static PUBLIC COLAMD )
     endif ( )
 endif ( )
 
@@ -444,23 +467,23 @@ endif ( )
 
 # CAMD and CCOLAMD:
 if ( NOT NCAMD )
-    target_link_libraries ( CHOLMOD PRIVATE SuiteSparse::CAMD )
+    target_link_libraries ( CHOLMOD PRIVATE CAMD )
     if ( NOT NSTATIC )
         set ( CHOLMOD_STATIC_MODULES "${CHOLMOD_STATIC_MODULES} CAMD" )
-        if ( TARGET SuiteSparse::CAMD_static )
-            target_link_libraries ( CHOLMOD_static PUBLIC SuiteSparse::CAMD_static )
+        if ( TARGET CAMD_static )
+            target_link_libraries ( CHOLMOD_static PUBLIC CAMD_static )
         else ( )
-            target_link_libraries ( CHOLMOD_static PUBLIC SuiteSparse::CAMD )
+            target_link_libraries ( CHOLMOD_static PUBLIC CAMD )
         endif ( )
     endif ( )
 
-    target_link_libraries ( CHOLMOD PRIVATE SuiteSparse::CCOLAMD )
+    target_link_libraries ( CHOLMOD PRIVATE CCOLAMD )
     if ( NOT NSTATIC )
         set ( CHOLMOD_STATIC_MODULES "${CHOLMOD_STATIC_MODULES} CCOLAMD" )
-        if ( TARGET SuiteSparse::CCOLAMD_static )
-            target_link_libraries ( CHOLMOD_static PUBLIC SuiteSparse::CCOLAMD_static )
+        if ( TARGET CCOLAMD_static )
+            target_link_libraries ( CHOLMOD_static PUBLIC CCOLAMD_static )
         else ( )
-            target_link_libraries ( CHOLMOD_static PUBLIC SuiteSparse::CCOLAMD )
+            target_link_libraries ( CHOLMOD_static PUBLIC CCOLAMD )
         endif ( )
     endif ( )
 endif ( )
@@ -640,11 +663,11 @@ if ( DEMO )
     endif ( )
 
     # Libraries required for Demo programs
-    target_link_libraries ( cholmod_demo PUBLIC CHOLMOD SuiteSparse::SuiteSparseConfig )
+    target_link_libraries ( cholmod_demo PUBLIC CHOLMOD SuiteSparseConfig )
     if ( SUITESPARSE_CUDA )
         target_link_libraries ( cholmod_demo PUBLIC CHOLMOD_CUDA )
     endif ( )
-    target_link_libraries ( cholmod_l_demo PUBLIC CHOLMOD SuiteSparse::SuiteSparseConfig )
+    target_link_libraries ( cholmod_l_demo PUBLIC CHOLMOD SuiteSparseConfig )
     if ( SUITESPARSE_CUDA )
         target_link_libraries ( cholmod_l_demo PUBLIC CHOLMOD_CUDA )
     endif ( )
@@ -663,6 +686,6 @@ endif ( )
 # report status
 #-------------------------------------------------------------------------------
 
-include ( SuiteSparseReport )
-
-
+if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
+    include ( SuiteSparseReport )
+endif ( )
