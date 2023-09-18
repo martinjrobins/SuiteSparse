@@ -29,19 +29,11 @@
 #
 #   make distclean
 
+#-------------------------------------------------------------------------------
+# get the version
+#-------------------------------------------------------------------------------
+
 cmake_minimum_required ( VERSION 3.20 )
-
-#-------------------------------------------------------------------------------
-# SuiteSparse policies
-#-------------------------------------------------------------------------------
-
-set ( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-    ${CMAKE_SOURCE_DIR}/cmake_modules
-    ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/cmake_modules )
-
-include ( SuiteSparsePolicy )
-
-#-------------------------------------------------------------------------------
 
 set(Mongoose_DATE "Sept 18, 2023")
 set(Mongoose_NUMERIC_DATE "2023-09-18")
@@ -49,9 +41,46 @@ set(Mongoose_VERSION_MAJOR 3)
 set(Mongoose_VERSION_MINOR 2)
 set(Mongoose_VERSION_PATCH 1)
 
+message ( STATUS "Building Mongoose version: v"
+    ${Mongoose_VERSION_MAJOR}.
+    ${Mongoose_VERSION_MINOR}.
+    ${Mongoose_VERSION_PATCH} " (" ${Mongoose_DATE} ")" )
+
+#-------------------------------------------------------------------------------
+# define the project
+#-------------------------------------------------------------------------------
+
 project(Mongoose
         VERSION "${Mongoose_VERSION_MAJOR}.${Mongoose_VERSION_MINOR}.${Mongoose_VERSION_PATCH}"
         LANGUAGES CXX C)
+
+#-------------------------------------------------------------------------------
+# SuiteSparse policies
+#-------------------------------------------------------------------------------
+
+set ( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+    ${PROJECT_SOURCE_DIR}/cmake_modules
+    ${PROJECT_SOURCE_DIR}/../SuiteSparse_config/cmake_modules )
+
+include ( SuiteSparsePolicy )
+
+#-------------------------------------------------------------------------------
+# find library dependencies
+#-------------------------------------------------------------------------------
+
+if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
+    find_package ( SuiteSparse_config 7.2.0
+        PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/build NO_DEFAULT_PATH )
+    if ( NOT TARGET SuiteSparse::SuiteSparseConfig )
+        find_package ( SuiteSparse_config 7.2.0 REQUIRED )
+    endif ( )
+    add_library ( SuiteSparseConfig ALIAS SuiteSparse::SuiteSparseConfig )
+    if ( NOT NSTATIC AND TARGET SuiteSparse::SuiteSparseConfig_static )
+        add_library ( SuiteSparseConfig_static ALIAS SuiteSparse::SuiteSparseConfig_static )
+    endif ( )
+endif ( )
+
+#-------------------------------------------------------------------------------
 
 # Mongoose installation location
 include ( GNUInstallDirs )
@@ -72,12 +101,6 @@ configure_file (
         "${PROJECT_SOURCE_DIR}/codemeta.json"
         NEWLINE_STYLE LF
 )
-
-find_package ( SuiteSparse_config 7.2.0
-    PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/build NO_DEFAULT_PATH )
-if ( NOT TARGET SuiteSparse::SuiteSparseConfig )
-    find_package ( SuiteSparse_config 7.2.0 REQUIRED )
-endif ( )
 
 include_directories("${PROJECT_BINARY_DIR}")
 
@@ -191,10 +214,10 @@ if ( NOT NSTATIC )
         INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Include>
                   $<INSTALL_INTERFACE:${SUITESPARSE_INCLUDEDIR}> )
 
-    if ( TARGET SuiteSparse::SuiteSparseConfig_static )
-        target_link_libraries ( Mongoose_static PUBLIC SuiteSparse::SuiteSparseConfig_static )
+    if ( TARGET SuiteSparseConfig_static )
+        target_link_libraries ( Mongoose_static PUBLIC SuiteSparseConfig_static )
     else ( )
-        target_link_libraries ( Mongoose_static PUBLIC SuiteSparse::SuiteSparseConfig )
+        target_link_libraries ( Mongoose_static PUBLIC SuiteSparseConfig )
     endif ( )
 endif ( )
 
@@ -209,9 +232,9 @@ target_include_directories ( Mongoose
     INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Include>
               $<INSTALL_INTERFACE:${SUITESPARSE_INCLUDEDIR}> )
 
-target_link_libraries ( Mongoose PRIVATE SuiteSparse::SuiteSparseConfig )
+target_link_libraries ( Mongoose PRIVATE SuiteSparseConfig )
 target_include_directories ( Mongoose PUBLIC
-    "$<TARGET_PROPERTY:SuiteSparse::SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
+    "$<TARGET_PROPERTY:SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
 
 # if(CMAKE_MAJOR_VERSION GREATER 2)
 #     set_target_properties(Mongoose PROPERTIES VERSION ${PROJECT_VERSION})
@@ -232,10 +255,10 @@ add_library ( Mongoose_static_dbg STATIC ${MONGOOSE_LIB_FILES} )
 set_target_properties ( Mongoose_static_dbg PROPERTIES
         OUTPUT_NAME mongoose_dbg )
 
-if ( TARGET SuiteSparse::SuiteSparseConfig_static )
-    target_link_libraries ( Mongoose_static_dbg SuiteSparse::SuiteSparseConfig_static )
+if ( TARGET SuiteSparseConfig_static )
+    target_link_libraries ( Mongoose_static_dbg SuiteSparseConfig_static )
 else ( )
-    target_link_libraries ( Mongoose_static_dbg SuiteSparse::SuiteSparseConfig )
+    target_link_libraries ( Mongoose_static_dbg SuiteSparseConfig )
 endif ( )
 
 # Build the Mongoose executable
@@ -247,10 +270,10 @@ if ( NSTATIC )
 else ( )
     target_link_libraries ( mongoose_exe Mongoose_static )
 endif ( )
-if ( TARGET SuiteSparse::SuiteSparseConfig_static )
-    target_link_libraries ( mongoose_exe SuiteSparse::SuiteSparseConfig_static )
+if ( TARGET SuiteSparseConfig_static )
+    target_link_libraries ( mongoose_exe SuiteSparseConfig_static )
 else ( )
-    target_link_libraries ( mongoose_exe SuiteSparse::SuiteSparseConfig )
+    target_link_libraries ( mongoose_exe SuiteSparseConfig )
 endif ( )
 
 # Build the Demo executable
@@ -262,10 +285,10 @@ if ( NSTATIC )
 else ( )
     target_link_libraries ( demo_exe Mongoose_static )
 endif ( )
-if ( TARGET SuiteSparse::SuiteSparseConfig_static )
-    target_link_libraries ( demo_exe SuiteSparse::SuiteSparseConfig_static )
+if ( TARGET SuiteSparseConfig_static )
+    target_link_libraries ( demo_exe SuiteSparseConfig_static )
 else ( )
-    target_link_libraries ( demo_exe SuiteSparse::SuiteSparseConfig )
+    target_link_libraries ( demo_exe SuiteSparseConfig )
 endif ( )
 
 # Coverage and Unit Testing Setup
@@ -277,10 +300,10 @@ add_executable ( mongoose_test_io
         Tests/Mongoose_Test_IO.cpp
         Tests/Mongoose_Test_IO_exe.cpp )
 target_link_libraries ( mongoose_test_io Mongoose_static_dbg )
-if ( TARGET SuiteSparse::SuiteSparseConfig_static )
-    target_link_libraries ( mongoose_test_io SuiteSparse::SuiteSparseConfig_static )
+if ( TARGET SuiteSparseConfig_static )
+    target_link_libraries ( mongoose_test_io SuiteSparseConfig_static )
 else ( )
-    target_link_libraries ( mongoose_test_io SuiteSparse::SuiteSparseConfig )
+    target_link_libraries ( mongoose_test_io SuiteSparseConfig )
 endif ( )
 set_target_properties ( mongoose_test_io PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TESTING_OUTPUT_PATH} )
 
@@ -316,10 +339,10 @@ if ( NSTATIC )
 else ( )
     target_link_libraries ( mongoose_test_performance Mongoose_static )
 endif ( )
-if ( TARGET SuiteSparse::SuiteSparseConfig_static )
-    target_link_libraries ( mongoose_test_performance SuiteSparse::SuiteSparseConfig_static )
+if ( TARGET SuiteSparseConfig_static )
+    target_link_libraries ( mongoose_test_performance SuiteSparseConfig_static )
 else ( )
-    target_link_libraries ( mongoose_test_performance SuiteSparse::SuiteSparseConfig )
+    target_link_libraries ( mongoose_test_performance SuiteSparseConfig )
 endif ( )
 set_target_properties ( mongoose_test_performance PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TESTING_OUTPUT_PATH} )
 add_test(Performance_Test ./runTests -min 1 -max 15 -t performance -p)
@@ -334,10 +357,10 @@ if ( NSTATIC )
 else ( )
     target_link_libraries ( mongoose_test_reference Mongoose_static )
 endif ( )
-if ( TARGET SuiteSparse::SuiteSparseConfig_static )
-    target_link_libraries ( mongoose_test_reference SuiteSparse::SuiteSparseConfig_static )
+if ( TARGET SuiteSparseConfig_static )
+    target_link_libraries ( mongoose_test_reference SuiteSparseConfig_static )
 else ( )
-    target_link_libraries ( mongoose_test_reference SuiteSparse::SuiteSparseConfig )
+    target_link_libraries ( mongoose_test_reference SuiteSparseConfig )
 endif ( )
 set_target_properties ( mongoose_test_reference PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TESTING_OUTPUT_PATH} )
 
@@ -546,5 +569,6 @@ endif ( )
 # report status
 #-------------------------------------------------------------------------------
 
-include ( SuiteSparseReport )
-
+if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
+    include ( SuiteSparseReport )
+endif ( )
