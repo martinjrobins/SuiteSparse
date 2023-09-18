@@ -2,7 +2,7 @@
 # SuiteSparse/AMD/CMakeLists.txt:  cmake for AMD
 #-------------------------------------------------------------------------------
 
-# Copyright (c) 1996-2022, Timothy A. Davis, Patrick Amestoy, Iain Duff.
+# Copyright (c) 1996-2023, Timothy A. Davis, Patrick Amestoy, Iain Duff.
 # All Rights Reserved.
 # SPDX-License-Identifier: BSD-3-clause
 
@@ -21,15 +21,6 @@ message ( STATUS "Building AMD version: v"
     ${AMD_VERSION_MAJOR}.
     ${AMD_VERSION_MINOR}.
     ${AMD_VERSION_SUB} " (" ${AMD_DATE} ")" )
-
-#-------------------------------------------------------------------------------
-# SuiteSparse policies
-#-------------------------------------------------------------------------------
-
-set ( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-    ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/cmake_modules )
-
-include ( SuiteSparsePolicy )
 
 #-------------------------------------------------------------------------------
 # define the project
@@ -53,13 +44,28 @@ else ( )
 endif ( )
 
 #-------------------------------------------------------------------------------
+# SuiteSparse policies
+#-------------------------------------------------------------------------------
+
+set ( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+    ${PROJECT_SOURCE_DIR}/../SuiteSparse_config/cmake_modules )
+
+include ( SuiteSparsePolicy )
+
+#-------------------------------------------------------------------------------
 # find library dependencies
 #-------------------------------------------------------------------------------
 
-find_package ( SuiteSparse_config 7.2.0
-    PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/build NO_DEFAULT_PATH )
-if ( NOT TARGET SuiteSparse::SuiteSparseConfig )
-    find_package ( SuiteSparse_config 7.2.0 REQUIRED )
+if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
+    find_package ( SuiteSparse_config 7.2.0
+        PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/build NO_DEFAULT_PATH )
+    if ( NOT TARGET SuiteSparse::SuiteSparseConfig )
+        find_package ( SuiteSparse_config 7.2.0 REQUIRED )
+    endif ( )
+    add_library ( SuiteSparseConfig ALIAS SuiteSparse::SuiteSparseConfig )
+    if ( NOT NSTATIC AND TARGET SuiteSparse::SuiteSparseConfig_static )
+        add_library ( SuiteSparseConfig_static ALIAS SuiteSparse::SuiteSparseConfig_static )
+    endif ( )
 endif ( )
 
 #-------------------------------------------------------------------------------
@@ -130,14 +136,14 @@ endif ( )
 #-------------------------------------------------------------------------------
 
 # SuiteSparseConfig:
-target_link_libraries ( AMD PRIVATE SuiteSparse::SuiteSparseConfig )
+target_link_libraries ( AMD PRIVATE SuiteSparseConfig )
 target_include_directories ( AMD PUBLIC
-    "$<TARGET_PROPERTY:SuiteSparse::SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
+    "$<TARGET_PROPERTY:SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
 if ( NOT NSTATIC )
-    if ( TARGET SuiteSparse::SuiteSparseConfig_static )
-        target_link_libraries ( AMD_static PUBLIC SuiteSparse::SuiteSparseConfig_static )
+    if ( TARGET SuiteSparseConfig_static )
+        target_link_libraries ( AMD_static PUBLIC SuiteSparseConfig_static )
     else ( )
-        target_link_libraries ( AMD_static PUBLIC SuiteSparse::SuiteSparseConfig )
+        target_link_libraries ( AMD_static PUBLIC SuiteSparseConfig )
     endif ( )
 endif ( )
 
@@ -267,5 +273,6 @@ endif ( )
 # report status
 #-------------------------------------------------------------------------------
 
-include ( SuiteSparseReport )
-
+if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
+    include ( SuiteSparseReport )
+endif ( )

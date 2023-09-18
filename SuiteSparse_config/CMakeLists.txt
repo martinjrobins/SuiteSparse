@@ -25,11 +25,19 @@ message ( STATUS "Building SuiteSparse_config version: v"
     ${SUITESPARSE_VERSION_SUB} " (" ${SUITESPARSE_DATE} ")" )
 
 #-------------------------------------------------------------------------------
+# define the project
+#-------------------------------------------------------------------------------
+
+project ( SuiteSparseConfig
+    VERSION "${SUITESPARSE_VERSION_MAJOR}.${SUITESPARSE_VERSION_MINOR}.${SUITESPARSE_VERSION_SUB}"
+    LANGUAGES C )
+
+#-------------------------------------------------------------------------------
 # SuiteSparse policies
 #-------------------------------------------------------------------------------
 
 set ( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-    ${CMAKE_SOURCE_DIR}/cmake_modules )
+    ${PROJECT_SOURCE_DIR}/cmake_modules )
 
 include ( SuiteSparsePolicy )
 
@@ -40,14 +48,6 @@ else ( )
     set ( FortranCInterface_GLOBAL_MACRO  ${SUITESPARSE_C_TO_FORTRAN} )
     set ( FortranCInterface_GLOBAL__MACRO ${SUITESPARSE_C_TO_FORTRAN} )
 endif ( )
-
-#-------------------------------------------------------------------------------
-# define the project
-#-------------------------------------------------------------------------------
-
-project ( SuiteSparseConfig
-    VERSION "${SUITESPARSE_VERSION_MAJOR}.${SUITESPARSE_VERSION_MINOR}.${SUITESPARSE_VERSION_SUB}"
-    LANGUAGES C )
 
 #-------------------------------------------------------------------------------
 # find library dependencies
@@ -233,5 +233,9 @@ if ( NOT MSVC )
 endif ( )
 
 #-------------------------------------------------------------------------------
+# report status
+#-------------------------------------------------------------------------------
 
-include ( SuiteSparseReport )
+if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
+    include ( SuiteSparseReport )
+endif ( )
