@@ -2,7 +2,7 @@
 # SuiteSparse/SuiteSparse_GPURuntime/CMakeLists.txt
 #-------------------------------------------------------------------------------
 
-# SuiteSparse_GPURuntime, Copyright (c) 2013-2022, Timothy A Davis,
+# SuiteSparse_GPURuntime, Copyright (c) 2013-2023, Timothy A Davis,
 # Sencer Nuri Yeralan, and Sanjay Ranka.  All Rights Reserved.
 # SPDX-License-Identifier: GPL-2.0+
 
@@ -23,29 +23,28 @@ message ( STATUS "Building SUITESPARSE_GPURUNTIME version: v"
     ${SUITESPARSE_GPURUNTIME_VERSION_SUB} " (" ${SUITESPARSE_GPURUNTIME_DATE} ")" )
 
 #-------------------------------------------------------------------------------
+# define the project
+#-------------------------------------------------------------------------------
+
+project ( suitesparse_gpuruntime 
+    VERSION "${SUITESPARSE_GPURUNTIME_VERSION_MAJOR}.${SUITESPARSE_GPURUNTIME_VERSION_MINOR}.${SUITESPARSE_GPURUNTIME_VERSION_SUB}"
+    LANGUAGES C CXX )
+
+#-------------------------------------------------------------------------------
 # SuiteSparse policies
 #-------------------------------------------------------------------------------
 
 set ( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-    ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/cmake_modules )
+    ${PROJECT_SOURCE_DIR}/../SuiteSparse_config/cmake_modules )
 
 option ( ENABLE_CUDA "Enable CUDA acceleration" on )
 
 include ( SuiteSparsePolicy )
 
-#-------------------------------------------------------------------------------
-# define the project
-#-------------------------------------------------------------------------------
-
 if ( SUITESPARSE_CUDA )
-    project ( suitesparse_gpuruntime 
-        VERSION "${SUITESPARSE_GPURUNTIME_VERSION_MAJOR}.${SUITESPARSE_GPURUNTIME_VERSION_MINOR}.${SUITESPARSE_GPURUNTIME_VERSION_SUB}"
-        LANGUAGES C CXX CUDA )
+    enable_language ( CUDA )
 else ( )
     # CUDA not available
-    project ( suitesparse_gpuruntime 
-        VERSION "${SUITESPARSE_GPURUNTIME_VERSION_MAJOR}.${SUITESPARSE_GPURUNTIME_VERSION_MINOR}.${SUITESPARSE_GPURUNTIME_VERSION_SUB}"
-        LANGUAGES C CXX )
     message ( STATUS "CUDA not enabled:  library will be empty" )
 endif ( )
 
@@ -53,10 +52,16 @@ endif ( )
 # find library dependencies
 #-------------------------------------------------------------------------------
 
-find_package ( SuiteSparse_config 7.2.0
-    PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/build NO_DEFAULT_PATH )
-if ( NOT TARGET SuiteSparse::SuiteSparseConfig )
-    find_package ( SuiteSparse_config 7.2.0 REQUIRED )
+if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
+    find_package ( SuiteSparse_config 7.2.0
+        PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/build NO_DEFAULT_PATH )
+    if ( NOT TARGET SuiteSparse::SuiteSparseConfig )
+        find_package ( SuiteSparse_config 7.2.0 REQUIRED )
+    endif ( )
+    add_library ( SuiteSparseConfig ALIAS SuiteSparse::SuiteSparseConfig )
+    if ( NOT NSTATIC AND TARGET SuiteSparse::SuiteSparseConfig_static )
+        add_library ( SuiteSparseConfig_static ALIAS SuiteSparse::SuiteSparseConfig_static )
+    endif ( )
 endif ( )
 
 #-------------------------------------------------------------------------------
@@ -100,7 +105,7 @@ set_target_properties ( GPURuntime PROPERTIES
 target_include_directories ( GPURuntime PRIVATE
     ${CUDAToolkit_INCLUDE_DIRS}
     ${SUITESPARSE_GPURUNTIME_INCLUDES}
-    $<TARGET_PROPERTY:SuiteSparse::SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES> )
+    $<TARGET_PROPERTY:SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES> )
 
 if ( SUITESPARSE_CUDA )
     set_target_properties ( GPURuntime PROPERTIES POSITION_INDEPENDENT_CODE ON )
@@ -135,7 +140,7 @@ if ( NOT NSTATIC )
     target_include_directories ( GPURuntime_static PRIVATE
         ${CUDAToolkit_INCLUDE_DIRS}
         ${SUITESPARSE_GPURUNTIME_INCLUDES}
-        $<TARGET_PROPERTY:SuiteSparse::SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES> )
+        $<TARGET_PROPERTY:SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES> )
 
     if ( SUITESPARSE_CUDA )
         set_target_properties ( GPURuntime_static PROPERTIES CUDA_SEPARABLE_COMPILATION on )
@@ -225,5 +230,6 @@ endif ( )
 # report status
 #-------------------------------------------------------------------------------
 
-include ( SuiteSparseReport )
-
+if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
+    include ( SuiteSparseReport )
+endif ( )

@@ -12,19 +12,43 @@ cmake_minimum_required ( VERSION 3.20 )
 project ( "SuiteSparse" )
 
 #-------------------------------------------------------------------------------
+# SuiteSparse policies
+#-------------------------------------------------------------------------------
+
+set ( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+    ${PROJECT_SOURCE_DIR}/SuiteSparse_config/cmake_modules )
+
+option ( ENABLE_CUDA "Enable CUDA acceleration" ON )
+
+# SuiteSparsePolicy enables SUITESPARSE_CUDA if a CUDA compiler can be found.
+include ( SuiteSparsePolicy )
+
+#-------------------------------------------------------------------------------
 # build options
 #-------------------------------------------------------------------------------
 
 # lower-case list of all projects that can be built by this root CMake file
-set ( SUITESPARSE_KNOWN_PROJECTS
+set ( SUITESPARSE_ALL_PROJECTS
     "suitesparse_config;mongoose;amd;btf;camd;ccolamd;colamd;cholmod;cxsparse;ldl;klu;umfpack;rbio" )
+
+# lower-case list of extra projects that can be built by this root CMake file
+set ( SUITESPARSE_EXTRA_PROJECTS
+    "suitesparse_gpuruntime" )
+
+# lower-case list of known projects that can be built by this root CMake file
+set ( SUITESPARSE_KNOWN_PROJECTS "${SUITESPARSE_ALL_PROJECTS};${SUITESPARSE_EXTRA_PROJECTS}" )
 
 set ( SUITESPARSE_ENABLE_PROJECTS "all" CACHE STRING
     "Semicolon-separated list of SuiteSparse projects to be built (${SUITESPARSE_KNOWN_PROJECTS}, or \"all\")" )
 
+if ( SUITESPARSE_CUDA )
+    set ( SUITESPARSE_ALL_PROJECTS
+        "${SUITESPARSE_ALL_PROJECTS};suitesparse_gpuruntime" )
+endif ( )
+
 # expand "all" early on
 if ( SUITESPARSE_ENABLE_PROJECTS STREQUAL "all" )
-    set ( SUITESPARSE_ENABLE_PROJECTS ${SUITESPARSE_KNOWN_PROJECTS} )
+    set ( SUITESPARSE_ENABLE_PROJECTS ${SUITESPARSE_ALL_PROJECTS} )
 endif ( )
 
 # check for unknown projects in list
@@ -114,7 +138,8 @@ if ( "mongoose" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "ldl" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "klu" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "umfpack" IN_LIST SUITESPARSE_ENABLE_PROJECTS
-        OR "rbio" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+        OR "rbio" IN_LIST SUITESPARSE_ENABLE_PROJECTS
+        OR "suitesparse_gpuruntime" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
     if ( NOT "suitesparse_config" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
         message ( STATUS "Adding \"suitesparse_config\" to the list of built targets." )
         list ( APPEND SUITESPARSE_ENABLE_PROJECTS "suitesparse_config" )
@@ -175,6 +200,10 @@ endif ( )
 
 if ( "rbio" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
     add_subdirectory ( "RBio" )
+endif ( )
+
+if ( "suitesparse_gpuruntime" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+    add_subdirectory ( "SuiteSparse_GPURuntime" )
 endif ( )
 
 #-------------------------------------------------------------------------------
