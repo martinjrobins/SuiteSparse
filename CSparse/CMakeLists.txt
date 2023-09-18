@@ -2,7 +2,7 @@
 # CSparse/CMakeLists.txt:  cmake for CSparse
 #-------------------------------------------------------------------------------
 
-# Copyright (c) 2006-2022, Timothy A. Davis.  All Rights Reserved.
+# Copyright (c) 2006-2023, Timothy A. Davis.  All Rights Reserved.
 # SPDX-License-Identifier: LGPL-2.1+
 
 # CSparse/CMakeLists.txt is a standalone script, which can be used outside of
@@ -28,10 +28,18 @@ message ( STATUS "Building CSparse version: v"
     ${CSPARSE_VERSION_SUB} " (" ${CSPARSE_DATE} ")" )
 
 #-------------------------------------------------------------------------------
+# define the project
+#-------------------------------------------------------------------------------
+
+project ( csparse
+    VERSION "${CSPARSE_VERSION_MAJOR}.${CSPARSE_VERSION_MINOR}.${CSPARSE_VERSION_SUB}"
+    LANGUAGES C )
+
+#-------------------------------------------------------------------------------
 # SuiteSparse policies (a subset)
 #-------------------------------------------------------------------------------
 
-message ( STATUS "Source:        " ${CMAKE_SOURCE_DIR} )
+message ( STATUS "Source:        " ${PROJECT_SOURCE_DIR} )
 message ( STATUS "Build:         " ${CMAKE_BINARY_DIR} )
 
 cmake_policy ( SET CMP0042 NEW )    # enable MACOSX_RPATH by default
@@ -44,7 +52,6 @@ if ( WIN32 )
 endif ( )
 
 set ( CMAKE_MACOSX_RPATH TRUE )
-enable_language ( C )
 include ( GNUInstallDirs )
 
 if ( NOT CMAKE_BUILD_TYPE )
@@ -52,14 +59,6 @@ if ( NOT CMAKE_BUILD_TYPE )
 endif ( )
 
 message ( STATUS "Build type:    " ${CMAKE_BUILD_TYPE} )
-
-#-------------------------------------------------------------------------------
-# define the project
-#-------------------------------------------------------------------------------
-
-project ( csparse
-    VERSION "${CSPARSE_VERSION_MAJOR}.${CSPARSE_VERSION_MINOR}.${CSPARSE_VERSION_SUB}"
-    LANGUAGES C )
 
 #-------------------------------------------------------------------------------
 # Configure cs.h with version number

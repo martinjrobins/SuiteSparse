@@ -33,7 +33,7 @@ set ( SUITESPARSE_ALL_PROJECTS
 
 # lower-case list of extra projects that can be built by this root CMake file
 set ( SUITESPARSE_EXTRA_PROJECTS
-    "suitesparse_gpuruntime;gpuqrengine" )
+    "suitesparse_gpuruntime;gpuqrengine;csparse" )
 
 # lower-case list of known projects that can be built by this root CMake file
 set ( SUITESPARSE_KNOWN_PROJECTS "${SUITESPARSE_ALL_PROJECTS};${SUITESPARSE_EXTRA_PROJECTS}" )
@@ -245,6 +245,10 @@ endif ( )
 
 if ( "spex" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
     add_subdirectory ( "SPEX" )
+endif ( )
+
+if ( "csparse" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+    add_subdirectory ( "CSparse" )
 endif ( )
 
 #-------------------------------------------------------------------------------
