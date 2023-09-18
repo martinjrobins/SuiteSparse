@@ -2,7 +2,7 @@
 # SuiteSparse/UMFPACK/CMakeLists.txt:  cmake for UMFPACK
 #-------------------------------------------------------------------------------
 
-# Copyright (c) 1995-2022, Timothy A. Davis.  All Rights Reserved.
+# Copyright (c) 1995-2023, Timothy A. Davis.  All Rights Reserved.
 # SPDX-License-Identifier: GPL-2.0+
 
 #-------------------------------------------------------------------------------
@@ -23,30 +23,28 @@ message ( STATUS "Building UMFPACK version: v"
     ${UMFPACK_VERSION_SUB} " (" ${UMFPACK_DATE} ")" )
 
 #-------------------------------------------------------------------------------
+# define the project
+#-------------------------------------------------------------------------------
+
+project ( umfpack
+    VERSION "${UMFPACK_VERSION_MAJOR}.${UMFPACK_VERSION_MINOR}.${UMFPACK_VERSION_SUB}"
+    LANGUAGES C )
+
+#-------------------------------------------------------------------------------
 # SuiteSparse policies
 #-------------------------------------------------------------------------------
 
 set ( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-    ${CMAKE_SOURCE_DIR}/../CHOLMOD/cmake_modules
-    ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/cmake_modules )
+    ${PROJECT_SOURCE_DIR}/../CHOLMOD/cmake_modules
+    ${PROJECT_SOURCE_DIR}/../SuiteSparse_config/cmake_modules )
 
 option ( ENABLE_CUDA "Enable CUDA acceleration" on )
 
 include ( SuiteSparsePolicy )
 
-#-------------------------------------------------------------------------------
-# define the project
-#-------------------------------------------------------------------------------
-
 if ( SUITESPARSE_CUDA )
     # UMFPACK with CHOLMOD (which can use CUDA)
-    project ( umfpack
-        VERSION "${UMFPACK_VERSION_MAJOR}.${UMFPACK_VERSION_MINOR}.${UMFPACK_VERSION_SUB}"
-        LANGUAGES C CXX CUDA )
-else ( )
-    project ( umfpack
-        VERSION "${UMFPACK_VERSION_MAJOR}.${UMFPACK_VERSION_MINOR}.${UMFPACK_VERSION_SUB}"
-        LANGUAGES C )
+    enable_language ( CXX CUDA )
 endif ( )
 
 #-------------------------------------------------------------------------------
@@ -61,26 +59,44 @@ else ( )
     find_package ( OpenMP )
 endif ( )
 
-find_package ( SuiteSparse_config 7.2.0
-    PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/build NO_DEFAULT_PATH )
-if ( NOT TARGET SuiteSparse::SuiteSparseConfig )
-    find_package ( SuiteSparse_config 7.2.0 REQUIRED )
+if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
+    find_package ( SuiteSparse_config 7.2.0
+        PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/build NO_DEFAULT_PATH )
+    if ( NOT TARGET SuiteSparse::SuiteSparseConfig )
+        find_package ( SuiteSparse_config 7.2.0 REQUIRED )
+    endif ( )
+    add_library ( SuiteSparseConfig ALIAS SuiteSparse::SuiteSparseConfig )
+    if ( NOT NSTATIC AND TARGET SuiteSparse::SuiteSparseConfig_static )
+        add_library ( SuiteSparseConfig_static ALIAS SuiteSparse::SuiteSparseConfig_static )
+    endif ( )
+
+    find_package ( AMD 3.2.0
+        PATHS ${CMAKE_SOURCE_DIR}/../AMD/build NO_DEFAULT_PATH )
+    if ( NOT TARGET SuiteSparse::AMD )
+        find_package ( AMD 3.2.0 REQUIRED )
+    endif ( )
+    add_library ( AMD ALIAS SuiteSparse::AMD )
+    if ( NOT NSTATIC AND TARGET SuiteSparse::AMD_static )
+        add_library ( AMD_static ALIAS SuiteSparse::AMD_static )
+    endif ( )
 endif ( )
-find_package ( AMD 3.2.0
-    PATHS ${CMAKE_SOURCE_DIR}/../AMD/build NO_DEFAULT_PATH )
-if ( NOT TARGET SuiteSparse::AMD )
-    find_package ( AMD 3.2.0 REQUIRED )
-endif ( )
+
 include ( SuiteSparseBLAS )     # requires cmake 3.22
 
-option ( NCHOLMOD "ON: do not use CHOLMOD.  OFF (default): use CHOLMOD" off )
+option ( NCHOLMOD "ON: do not use CHOLMOD.  OFF (default): use CHOLMOD" OFF )
 
-if ( NOT NCHOLMOD )
+if ( NOT SUITESPARSE_ROOT_CMAKELISTS AND NOT NCHOLMOD )
     # look for CHOLMOD (optional fill-reducing orderings)
     find_package ( CHOLMOD 4.2.0
         PATHS ${CMAKE_SOURCE_DIR}/../CHOLMOD/build NO_DEFAULT_PATH )
     if ( NOT TARGET SuiteSparse::CHOLMOD )
         find_package ( CHOLMOD 4.2.0 )
+    endif ( )
+    if ( CHOLMOD_FOUND )
+        add_library ( CHOLMOD ALIAS SuiteSparse::CHOLMOD )
+        if ( NOT NSTATIC AND TARGET SuiteSparse::CHOLMOD_static )
+            add_library ( CHOLMOD_static ALIAS SuiteSparse::CHOLMOD_static )
+        endif ( )
     endif ( )
 
     # look for CHOLMOD's dependencies: AMD and COLAMD are required.  CAMD and
@@ -90,17 +106,35 @@ if ( NOT NCHOLMOD )
     if ( NOT TARGET SuiteSparse::COLAMD )
         find_package ( COLAMD 3.2.0 )
     endif ( )
+    if ( COLAMD_FOUND )
+        add_library ( COLAMD ALIAS SuiteSparse::COLAMD )
+        if ( NOT NSTATIC AND TARGET SuiteSparse::COLAMD_static )
+            add_library ( COLAMD_static ALIAS SuiteSparse::COLAMD_static )
+        endif ( )
+    endif ( )
 
     find_package ( CAMD 3.2.0
         PATHS ${CMAKE_SOURCE_DIR}/../CAMD/build NO_DEFAULT_PATH )
     if ( NOT TARGET SuiteSparse::CAMD )
         find_package ( CAMD 3.2.0 )
     endif ( )
+    if ( CAMD_FOUND )
+        add_library ( CAMD ALIAS SuiteSparse::CAMD )
+        if ( NOT NSTATIC AND TARGET SuiteSparse::CAMD_static )
+            add_library ( CAMD_static ALIAS SuiteSparse::CAMD_static )
+        endif ( )
+    endif ( )
 
     find_package ( CCOLAMD 3.2.0
         PATHS ${CMAKE_SOURCE_DIR}/../CCOLAMD/build NO_DEFAULT_PATH )
     if ( NOT TARGET SuiteSparse::CCOLAMD )
         find_package ( CCOLAMD 3.2.0 )
+    endif ( )
+    if ( CCOLAMD_FOUND )
+        add_library ( CCOLAMD ALIAS SuiteSparse::CCOLAMD )
+        if ( NOT NSTATIC AND TARGET SuiteSparse::CCOLAMD_static )
+            add_library ( CCOLAMD_static ALIAS SuiteSparse::CCOLAMD_static )
+        endif ( )
     endif ( )
 
     if ( NOT CHOLMOD_FOUND OR NOT AMD_FOUND OR NOT COLAMD_FOUND )
@@ -188,13 +222,13 @@ endif ( )
 #-------------------------------------------------------------------------------
 
 # SuiteSparseConfig:
-target_link_libraries ( UMFPACK PRIVATE SuiteSparse::SuiteSparseConfig )
-target_include_directories ( UMFPACK PUBLIC "$<TARGET_PROPERTY:SuiteSparse::SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
+target_link_libraries ( UMFPACK PRIVATE SuiteSparseConfig )
+target_include_directories ( UMFPACK PUBLIC "$<TARGET_PROPERTY:SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
 if ( NOT NSTATIC )
-    if ( TARGET SuiteSparse::SuiteSparseConfig_static )
-        target_link_libraries ( UMFPACK_static PUBLIC SuiteSparse::SuiteSparseConfig_static )
+    if ( TARGET SuiteSparseConfig_static )
+        target_link_libraries ( UMFPACK_static PUBLIC SuiteSparseConfig_static )
     else ( )
-        target_link_libraries ( UMFPACK_static PUBLIC SuiteSparse::SuiteSparseConfig )
+        target_link_libraries ( UMFPACK_static PUBLIC SuiteSparseConfig )
     endif ( )
 endif ( )
 
@@ -222,14 +256,14 @@ if ( NOT WIN32 )
 endif ( )
 
 # AMD:
-target_link_libraries ( UMFPACK PRIVATE SuiteSparse::AMD )
+target_link_libraries ( UMFPACK PRIVATE AMD )
 target_include_directories ( UMFPACK PUBLIC
-    "$<TARGET_PROPERTY:SuiteSparse::AMD,INTERFACE_INCLUDE_DIRECTORIES>" )
+    "$<TARGET_PROPERTY:AMD,INTERFACE_INCLUDE_DIRECTORIES>" )
 if ( NOT NSTATIC )
-    if ( TARGET SuiteSparse::AMD_static )
-        target_link_libraries ( UMFPACK_static PUBLIC SuiteSparse::AMD_static )
+    if ( TARGET AMD_static )
+        target_link_libraries ( UMFPACK_static PUBLIC AMD_static )
     else ( )
-        target_link_libraries ( UMFPACK_static PUBLIC SuiteSparse::AMD )
+        target_link_libraries ( UMFPACK_static PUBLIC AMD )
     endif ( )
 endif ( )
 
@@ -247,13 +281,13 @@ include_directories ( ${BLAS_INCLUDE_DIRS} )
 # CHOLMOD:
 if ( NOT NCHOLMOD )
     # link with CHOLMOD and its dependencies, both required and optional
-    target_link_libraries ( UMFPACK PRIVATE SuiteSparse::CHOLMOD )
+    target_link_libraries ( UMFPACK PRIVATE CHOLMOD )
     if ( NOT NSTATIC )
         set ( UMFPACK_STATIC_MODULES "${UMFPACK_STATIC_MODULES} CHOLMOD" )
-        if ( TARGET SuiteSparse::CHOLMOD_static )
-            target_link_libraries ( UMFPACK_static PUBLIC SuiteSparse::CHOLMOD_static )
+        if ( TARGET CHOLMOD_static )
+            target_link_libraries ( UMFPACK_static PUBLIC CHOLMOD_static )
         else ( )
-            target_link_libraries ( UMFPACK_static PUBLIC SuiteSparse::CHOLMOD )
+            target_link_libraries ( UMFPACK_static PUBLIC CHOLMOD )
         endif ( )
     endif ( )
 
@@ -397,7 +431,7 @@ if ( DEMO )
     endif ( )
 
     # Libraries required for Demo programs
-    target_link_libraries ( umfpack_simple  PUBLIC UMFPACK SuiteSparse::SuiteSparseConfig )
+    target_link_libraries ( umfpack_simple  PUBLIC UMFPACK SuiteSparseConfig )
     target_link_libraries ( umfpack_di_demo PUBLIC UMFPACK )
     target_link_libraries ( umfpack_dl_demo PUBLIC UMFPACK )
     target_link_libraries ( umfpack_zi_demo PUBLIC UMFPACK )
@@ -405,18 +439,14 @@ if ( DEMO )
     if ( NOT WIN32 )
         # This is only needed because the demos might be linked before those
         # libraries are installed. Would it be better to set the rpath instead?
-        target_link_libraries ( umfpack_di_demo PUBLIC
-            SuiteSparse::COLAMD SuiteSparse::CAMD SuiteSparse::CCOLAMD )
-        target_link_libraries ( umfpack_dl_demo PUBLIC
-            SuiteSparse::COLAMD SuiteSparse::CAMD SuiteSparse::CCOLAMD )
-        target_link_libraries ( umfpack_zi_demo PUBLIC
-            SuiteSparse::COLAMD SuiteSparse::CAMD SuiteSparse::CCOLAMD )
-        target_link_libraries ( umfpack_zl_demo PUBLIC
-            SuiteSparse::COLAMD SuiteSparse::CAMD SuiteSparse::CCOLAMD )
+        target_link_libraries ( umfpack_di_demo PUBLIC COLAMD CAMD CCOLAMD )
+        target_link_libraries ( umfpack_dl_demo PUBLIC COLAMD CAMD CCOLAMD )
+        target_link_libraries ( umfpack_zi_demo PUBLIC COLAMD CAMD CCOLAMD )
+        target_link_libraries ( umfpack_zl_demo PUBLIC COLAMD CAMD CCOLAMD )
     endif ( )
     if ( NOT NFORTRAN )
         # Fortran demos
-        target_link_libraries ( umf4            PUBLIC UMFPACK SuiteSparse::AMD )
+        target_link_libraries ( umf4            PUBLIC UMFPACK AMD )
         target_link_libraries ( umf4hb          PUBLIC UMFPACK )
         target_link_libraries ( umf4zhb         PUBLIC UMFPACK )
         target_link_libraries ( umf4hb64        PUBLIC UMFPACK )
@@ -425,14 +455,10 @@ if ( DEMO )
             # This is only needed because the demos might be linked before
             # those libraries are installed. Would it be better to set the
             # rpath instead?
-            target_link_libraries ( umf4hb PUBLIC
-                SuiteSparse::COLAMD SuiteSparse::CAMD SuiteSparse::CCOLAMD )
-            target_link_libraries ( umf4zhb PUBLIC
-                SuiteSparse::COLAMD SuiteSparse::CAMD SuiteSparse::CCOLAMD )
-            target_link_libraries ( umf4hb64 PUBLIC
-                SuiteSparse::COLAMD SuiteSparse::CAMD SuiteSparse::CCOLAMD )
-            target_link_libraries ( umf4zhb64 PUBLIC
-                SuiteSparse::COLAMD SuiteSparse::CAMD SuiteSparse::CCOLAMD )
+            target_link_libraries ( umf4hb PUBLIC COLAMD CAMD CCOLAMD )
+            target_link_libraries ( umf4zhb PUBLIC COLAMD CAMD CCOLAMD )
+            target_link_libraries ( umf4hb64 PUBLIC COLAMD CAMD CCOLAMD )
+            target_link_libraries ( umf4zhb64 PUBLIC COLAMD CAMD CCOLAMD )
         endif ( )
     endif ( )
 
@@ -446,5 +472,6 @@ endif ( )
 # report status
 #-------------------------------------------------------------------------------
 
-include ( SuiteSparseReport )
-
+if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
+    include ( SuiteSparseReport )
+endif ( )

@@ -17,7 +17,7 @@ project ( "SuiteSparse" )
 
 # lower-case list of all projects that can be built by this root CMake file
 set ( SUITESPARSE_KNOWN_PROJECTS
-    "suitesparse_config;mongoose;amd;btf;camd;ccolamd;colamd;cholmod;cxsparse;ldl;klu" )
+    "suitesparse_config;mongoose;amd;btf;camd;ccolamd;colamd;cholmod;cxsparse;ldl;klu;umfpack" )
 
 set ( SUITESPARSE_ENABLE_PROJECTS "all" CACHE STRING
     "Semicolon-separated list of SuiteSparse projects to be built (${SUITESPARSE_KNOWN_PROJECTS}, or \"all\")" )
@@ -37,7 +37,7 @@ endforeach ( )
 # CHOLMOD options affecting dependencies
 option ( NCAMD "ON: do not use CAMD/CCOLAMD.  OFF (default): use CAMD/CCOLAMD" OFF )
 
-# KLU options affecting dependencies
+# KLU and UMFPACK options affecting dependencies
 option ( NCHOLMOD "ON: do not use CHOLMOD.  OFF (default): use CHOLMOD" OFF )
 
 #-------------------------------------------------------------------------------
@@ -67,6 +67,10 @@ if ( "klu" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
         message ( STATUS "Adding \"btf\" to the list of built targets." )
         list ( APPEND SUITESPARSE_ENABLE_PROJECTS "btf" )
     endif ( )
+endif ( )
+
+if ( "klu" IN_LIST SUITESPARSE_ENABLE_PROJECTS
+        OR "umfpack" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
     if ( NOT NCHOLMOD AND NOT "cholmod" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
         message ( STATUS "Adding \"cholmod\" to the list of built targets." )
         list ( APPEND SUITESPARSE_ENABLE_PROJECTS "cholmod" )
@@ -74,7 +78,8 @@ if ( "klu" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
 endif ( )
 
 if ( "cholmod" IN_LIST SUITESPARSE_ENABLE_PROJECTS
-        OR "ldl" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+        OR "ldl" IN_LIST SUITESPARSE_ENABLE_PROJECTS
+        OR "umfpack" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
     if ( NOT "amd" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
         message ( STATUS "Adding \"amd\" to the list of built targets." )
         list ( APPEND SUITESPARSE_ENABLE_PROJECTS "amd" )
@@ -107,7 +112,8 @@ if ( "mongoose" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "cholmod" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "cxsparse" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "ldl" IN_LIST SUITESPARSE_ENABLE_PROJECTS
-        OR "klu" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+        OR "klu" IN_LIST SUITESPARSE_ENABLE_PROJECTS
+        OR "umfpack" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
     if ( NOT "suitesparse_config" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
         message ( STATUS "Adding \"suitesparse_config\" to the list of built targets." )
         list ( APPEND SUITESPARSE_ENABLE_PROJECTS "suitesparse_config" )
@@ -160,6 +166,10 @@ endif ( )
 
 if ( "klu" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
     add_subdirectory ( "KLU" )
+endif ( )
+
+if ( "umfpack" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+    add_subdirectory ( "UMFPACK" )
 endif ( )
 
 #-------------------------------------------------------------------------------
