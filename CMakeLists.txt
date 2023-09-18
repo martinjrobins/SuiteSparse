@@ -29,7 +29,7 @@ include ( SuiteSparsePolicy )
 
 # lower-case list of all projects that can be built by this root CMake file
 set ( SUITESPARSE_ALL_PROJECTS
-    "suitesparse_config;mongoose;amd;btf;camd;ccolamd;colamd;cholmod;cxsparse;ldl;klu;umfpack;rbio" )
+    "suitesparse_config;mongoose;amd;btf;camd;ccolamd;colamd;cholmod;cxsparse;ldl;klu;umfpack;rbio;spqr" )
 
 # lower-case list of extra projects that can be built by this root CMake file
 set ( SUITESPARSE_EXTRA_PROJECTS
@@ -94,7 +94,8 @@ if ( "klu" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
 endif ( )
 
 if ( "klu" IN_LIST SUITESPARSE_ENABLE_PROJECTS
-        OR "umfpack" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+        OR "umfpack" IN_LIST SUITESPARSE_ENABLE_PROJECTS
+        OR "spqr" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
     if ( NOT NCHOLMOD AND NOT "cholmod" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
         message ( STATUS "Adding \"cholmod\" to the list of built targets." )
         list ( APPEND SUITESPARSE_ENABLE_PROJECTS "cholmod" )
@@ -127,6 +128,13 @@ if ( "cholmod" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
     endif ( )
 endif ( )
 
+if ( SUITESPARSE_CUDA AND "spqr" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+    if ( NOT "gpuqrengine" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+        message ( STATUS "Adding \"gpuqrengine\" to the list of built targets." )
+        list ( APPEND SUITESPARSE_ENABLE_PROJECTS "gpuqrengine" )
+    endif ( )
+endif ( )
+
 if ( SUITESPARSE_CUDA AND "gpuqrengine" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
     if ( NOT "suitesparse_gpuruntime" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
         message ( STATUS "Adding \"suitesparse_gpuruntime\" to the list of built targets." )
@@ -147,7 +155,8 @@ if ( "mongoose" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "umfpack" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "rbio" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "suitesparse_gpuruntime" IN_LIST SUITESPARSE_ENABLE_PROJECTS
-        OR "gpuqrengine" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+        OR "gpuqrengine" IN_LIST SUITESPARSE_ENABLE_PROJECTS
+        OR "spqr" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
     if ( NOT "suitesparse_config" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
         message ( STATUS "Adding \"suitesparse_config\" to the list of built targets." )
         list ( APPEND SUITESPARSE_ENABLE_PROJECTS "suitesparse_config" )
@@ -216,6 +225,10 @@ endif ( )
 
 if ( "gpuqrengine" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
     add_subdirectory ( "GPUQREngine" )
+endif ( )
+
+if ( "spqr" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+    add_subdirectory ( "SPQR" )
 endif ( )
 
 #-------------------------------------------------------------------------------

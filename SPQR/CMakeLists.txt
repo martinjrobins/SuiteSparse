@@ -24,23 +24,23 @@ message ( STATUS "Building SPQR version: v"
     ${SPQR_VERSION_SUB} " (" ${SPQR_DATE} ")" )
 
 #-------------------------------------------------------------------------------
-# SuiteSparse policies
-#-------------------------------------------------------------------------------
-
-set ( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-    ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/cmake_modules )
-
-option ( ENABLE_CUDA "Enable CUDA acceleration" ON )
-
-include ( SuiteSparsePolicy )
-
-#-------------------------------------------------------------------------------
 # define the project
 #-------------------------------------------------------------------------------
 
 project ( spqr
     VERSION "${SPQR_VERSION_MAJOR}.${SPQR_VERSION_MINOR}.${SPQR_VERSION_SUB}"
     LANGUAGES C CXX )
+
+#-------------------------------------------------------------------------------
+# SuiteSparse policies
+#-------------------------------------------------------------------------------
+
+set ( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+    ${PROJECT_SOURCE_DIR}/../SuiteSparse_config/cmake_modules )
+
+option ( ENABLE_CUDA "Enable CUDA acceleration" ON )
+
+include ( SuiteSparsePolicy )
 
 #-------------------------------------------------------------------------------
 # find library dependencies
@@ -54,51 +54,86 @@ else ( )
     find_package ( OpenMP )
 endif ( )
 
-find_package ( SuiteSparse_config 7.2.0
-    PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/build NO_DEFAULT_PATH )
-if ( NOT TARGET SuiteSparse::SuiteSparseConfig )
-    find_package ( SuiteSparse_config 7.2.0 REQUIRED )
+if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
+    find_package ( SuiteSparse_config 7.2.0
+        PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/build NO_DEFAULT_PATH )
+    if ( NOT TARGET SuiteSparse::SuiteSparseConfig )
+        find_package ( SuiteSparse_config 7.2.0 REQUIRED )
+    endif ( )
+    add_library ( SuiteSparseConfig ALIAS SuiteSparse::SuiteSparseConfig )
+    if ( NOT NSTATIC AND TARGET SuiteSparse::SuiteSparseConfig_static )
+        add_library ( SuiteSparseConfig_static ALIAS SuiteSparse::SuiteSparseConfig_static )
+    endif ( )
+
+    find_package ( AMD 3.2.0
+        PATHS ${CMAKE_SOURCE_DIR}/../AMD/build NO_DEFAULT_PATH )
+    if ( NOT TARGET SuiteSparse::AMD )
+        find_package ( AMD 3.2.0 REQUIRED )
+    endif ( )
+    add_library ( AMD ALIAS SuiteSparse::AMD )
+    if ( NOT NSTATIC AND TARGET SuiteSparse::AMD_static )
+        add_library ( AMD_static ALIAS SuiteSparse::AMD_static )
+    endif ( )
+
+    find_package ( COLAMD 3.2.0
+        PATHS ${CMAKE_SOURCE_DIR}/../COLAMD/build NO_DEFAULT_PATH )
+    if ( NOT TARGET SuiteSparse::COLAMD )
+        find_package ( COLAMD 3.2.0 REQUIRED )
+    endif ( )
+    add_library ( COLAMD ALIAS SuiteSparse::COLAMD )
+    if ( NOT NSTATIC AND TARGET SuiteSparse::COLAMD_static )
+        add_library ( COLAMD_static ALIAS SuiteSparse::COLAMD_static )
+    endif ( )
+
+    # It would be nice if just checking for CHOLMOD would automatically pull in
+    # the targets for its dependencies.
+    find_package ( CHOLMOD 4.2.0
+        PATHS ${CMAKE_SOURCE_DIR}/../CHOLMOD/build NO_DEFAULT_PATH )
+    if ( NOT TARGET SuiteSparse::CHOLMOD )
+        find_package ( CHOLMOD 4.2.0 REQUIRED )
+    endif ( )
+    add_library ( CHOLMOD ALIAS SuiteSparse::CHOLMOD )
+    if ( NOT NSTATIC AND TARGET SuiteSparse::CHOLMOD_static )
+        add_library ( CHOLMOD_static ALIAS SuiteSparse::CHOLMOD_static )
+    endif ( )
+
+    # look for CHOLMOD's dependencies: AMD and COLAMD are required.  CAMD and
+    # CCOLAMD are optional, but must be found if CHOLMOD was built with them.
+    find_package ( CAMD 3.2.0
+        PATHS ${CMAKE_SOURCE_DIR}/../CAMD/build NO_DEFAULT_PATH )
+    if ( NOT TARGET SuiteSparse::CAMD )
+        find_package ( CAMD 3.2.0 )
+    endif ( )
+    if ( CAMD_FOUND )
+        add_library ( CAMD ALIAS SuiteSparse::CAMD )
+        if ( NOT NSTATIC AND TARGET SuiteSparse::CAMD_static )
+            add_library ( CAMD_static ALIAS SuiteSparse::CAMD_static )
+        endif ( )
+    endif ( )
+
+    find_package ( CCOLAMD 3.2.0
+        PATHS ${CMAKE_SOURCE_DIR}/../CCOLAMD/build NO_DEFAULT_PATH )
+    if ( NOT TARGET SuiteSparse::CCOLAMD )
+        find_package ( CCOLAMD 3.2.0 )
+    endif ( )
+    if ( CCOLAMD_FOUND )
+        add_library ( CCOLAMD ALIAS SuiteSparse::CCOLAMD )
+        if ( NOT NSTATIC AND TARGET SuiteSparse::CCOLAMD_static )
+            add_library ( CCOLAMD_static ALIAS SuiteSparse::CCOLAMD_static )
+        endif ( )
+    endif ( )
+
 endif ( )
 
-find_package ( AMD 3.2.0
-    PATHS ${CMAKE_SOURCE_DIR}/../AMD/build NO_DEFAULT_PATH )
-if ( NOT TARGET SuiteSparse::AMD )
-    find_package ( AMD 3.2.0 REQUIRED )
-endif ( )
-
-find_package ( COLAMD 3.2.0
-    PATHS ${CMAKE_SOURCE_DIR}/../COLAMD/build NO_DEFAULT_PATH )
-if ( NOT TARGET SuiteSparse::COLAMD )
-    find_package ( COLAMD 3.2.0 REQUIRED )
-endif ( )
-
-# It would be nice if just checking for CHOLMOD would automatically pull in
-# the targets for its dependencies.
-find_package ( CHOLMOD 4.2.0
-    PATHS ${CMAKE_SOURCE_DIR}/../CHOLMOD/build NO_DEFAULT_PATH )
-if ( NOT TARGET SuiteSparse::CHOLMOD )
-    find_package ( CHOLMOD 4.2.0 REQUIRED )
-endif ( )
-
-# look for CHOLMOD's dependencies: AMD and COLAMD are required.  CAMD and
-# CCOLAMD are optional, but must be found if CHOLMOD was built with them.
-find_package ( CAMD 3.2.0
-    PATHS ${CMAKE_SOURCE_DIR}/../CAMD/build NO_DEFAULT_PATH )
-if ( NOT TARGET SuiteSparse::CAMD )
-    find_package ( CAMD 3.2.0 )
-endif ( )
-
-find_package ( CCOLAMD 3.2.0
-    PATHS ${CMAKE_SOURCE_DIR}/../CCOLAMD/build NO_DEFAULT_PATH )
-if ( NOT TARGET SuiteSparse::CCOLAMD )
-    find_package ( CCOLAMD 3.2.0 )
-endif ( )
-
-if ( SUITESPARSE_CUDA )
+if ( NOT SUITESPARSE_ROOT_CMAKELISTS AND SUITESPARSE_CUDA )
     find_package ( SuiteSparse_GPURuntime 3.2.0
         PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_GPURuntime/build NO_DEFAULT_PATH )
     if ( NOT TARGET SuiteSparse::GPURuntime )
         find_package ( SuiteSparse_GPURuntime 3.2.0 REQUIRED )
+    endif ( )
+    add_library ( GPURuntime ALIAS SuiteSparse::GPURuntime )
+    if ( NOT NSTATIC AND TARGET SuiteSparse::GPURuntime_static )
+        add_library ( GPURuntime_static ALIAS SuiteSparse::GPURuntime_static )
     endif ( )
 
     find_package ( GPUQREngine 3.2.0
@@ -106,11 +141,19 @@ if ( SUITESPARSE_CUDA )
     if ( NOT TARGET SuiteSparse::GPUQREngine )
         find_package ( GPUQREngine 3.2.0 REQUIRED )
     endif ( )
+    add_library ( GPUQREngine ALIAS SuiteSparse::GPUQREngine )
+    if ( NOT NSTATIC AND TARGET SuiteSparse::GPUQREngine_static )
+        add_library ( GPUQREngine_static ALIAS SuiteSparse::GPUQREngine_static )
+    endif ( )
 
     find_package ( CHOLMOD_CUDA 4.2.0
         PATHS ${CMAKE_SOURCE_DIR}/../CHOLMOD/build NO_DEFAULT_PATH )
     if ( NOT TARGET SuiteSparse::CHOLMOD_CUDA )
         find_package ( CHOLMOD_CUDA 4.2.0 REQUIRED )
+    endif ( )
+    add_library ( CHOLMOD_CUDA ALIAS SuiteSparse::CHOLMOD_CUDA )
+    if ( NOT NSTATIC AND TARGET SuiteSparse::CHOLMOD_CUDA_static )
+        add_library ( CHOLMOD_CUDA_static ALIAS SuiteSparse::CHOLMOD_CUDA_static )
     endif ( )
 endif ( )
 
@@ -189,12 +232,12 @@ endif ( )
 #-------------------------------------------------------------------------------
 
 # SuiteSparseConfig:
-target_link_libraries ( SPQR PRIVATE SuiteSparse::SuiteSparseConfig )
+target_link_libraries ( SPQR PRIVATE SuiteSparseConfig )
 if ( NOT NSTATIC )
-    if ( TARGET SuiteSparse::SuiteSparseConfig_static )
-        target_link_libraries ( SPQR_static PUBLIC SuiteSparse::SuiteSparseConfig_static )
+    if ( TARGET SuiteSparseConfig_static )
+        target_link_libraries ( SPQR_static PUBLIC SuiteSparseConfig_static )
     else ( )
-        target_link_libraries ( SPQR_static PUBLIC SuiteSparse::SuiteSparseConfig )
+        target_link_libraries ( SPQR_static PUBLIC SuiteSparseConfig )
     endif ( )
 endif ( )
 
@@ -242,45 +285,43 @@ endif ( )
 
 # CHOLMOD:
 # link with CHOLMOD and its dependencies
-target_link_libraries ( SPQR PRIVATE
-    SuiteSparse::CHOLMOD )
+target_link_libraries ( SPQR PRIVATE CHOLMOD )
 if ( NOT NSTATIC )
-    if ( TARGET SuiteSparse::CHOLMOD_static )
-        target_link_libraries ( SPQR_static PUBLIC SuiteSparse::CHOLMOD_static )
+    if ( TARGET CHOLMOD_static )
+        target_link_libraries ( SPQR_static PUBLIC CHOLMOD_static )
     else ( )
-        target_link_libraries ( SPQR_static PUBLIC SuiteSparse::CHOLMOD )
+        target_link_libraries ( SPQR_static PUBLIC CHOLMOD )
     endif ( )
 endif ( )
 
 if ( SUITESPARSE_CUDA )
     # CUDA
-    target_link_libraries ( SPQR PRIVATE SuiteSparse::CHOLMOD_CUDA SPQR_CUDA )
+    target_link_libraries ( SPQR PRIVATE CHOLMOD_CUDA SPQR_CUDA )
     # SPQR includes files from the following targets that are not installed by
     # them.  That looks strange and will only work before they are installed.
     # Maybe, those two targets aren't actually standalone libraries but should
     # be part of the SPQR project?
-    target_link_libraries ( SPQR PRIVATE
-        SuiteSparse::GPUQREngine SuiteSparse::GPURuntime )
+    target_link_libraries ( SPQR PRIVATE GPUQREngine GPURuntime )
     target_compile_definitions ( SPQR PUBLIC "SUITESPARSE_CUDA" )
     set ( SPQR_CFLAGS "-DSUITESPARSE_CUDA" )
     if ( NOT NSTATIC )
-        if ( TARGET SuiteSparse::CHOLMOD_CUDA_static )
-            target_link_libraries ( SPQR_static PUBLIC SuiteSparse::CHOLMOD_CUDA_static )
+        if ( TARGET CHOLMOD_CUDA_static )
+            target_link_libraries ( SPQR_static PUBLIC CHOLMOD_CUDA_static )
         else ( )
-            target_link_libraries ( SPQR_static PUBLIC SuiteSparse::CHOLMOD_CUDA )
+            target_link_libraries ( SPQR_static PUBLIC CHOLMOD_CUDA )
         endif ( )
         target_link_libraries ( SPQR_static PUBLIC SPQR_CUDA_static )
         target_compile_definitions ( SPQR_static PUBLIC "SUITESPARSE_CUDA" )
 
-        if ( TARGET SuiteSparse::GPUQREngine_static )
-            target_link_libraries ( SPQR_static PUBLIC SuiteSparse::GPUQREngine_static )
+        if ( TARGET GPUQREngine_static )
+            target_link_libraries ( SPQR_static PUBLIC GPUQREngine_static )
         else ( )
-            target_link_libraries ( SPQR_static PUBLIC SuiteSparse::GPUQREngine )
+            target_link_libraries ( SPQR_static PUBLIC GPUQREngine )
         endif ( )
-        if ( TARGET SuiteSparse::GPURuntime_static )
-            target_link_libraries ( SPQR_static PUBLIC SuiteSparse::GPURuntime_static )
+        if ( TARGET GPURuntime_static )
+            target_link_libraries ( SPQR_static PUBLIC GPURuntime_static )
         else ( )
-            target_link_libraries ( SPQR_static PUBLIC SuiteSparse::GPURuntime )
+            target_link_libraries ( SPQR_static PUBLIC GPURuntime )
         endif ( )
     endif ( )
 endif ( )
@@ -429,22 +470,22 @@ if ( DEMO )
     endif ( )
 
     # Libraries required for Demo programs
-    target_link_libraries ( qrsimple  PUBLIC SPQR SuiteSparse::CHOLMOD )
-    target_link_libraries ( qrsimplec PUBLIC SPQR SuiteSparse::CHOLMOD )
-    target_link_libraries ( qrdemo    PUBLIC SPQR SuiteSparse::CHOLMOD )
-    target_link_libraries ( qrdemoc   PUBLIC SPQR SuiteSparse::CHOLMOD )
+    target_link_libraries ( qrsimple  PUBLIC SPQR CHOLMOD )
+    target_link_libraries ( qrsimplec PUBLIC SPQR CHOLMOD )
+    target_link_libraries ( qrdemo    PUBLIC SPQR CHOLMOD )
+    target_link_libraries ( qrdemoc   PUBLIC SPQR CHOLMOD )
 
-    target_link_libraries ( qrsimplec_int32 PUBLIC SPQR SuiteSparse::CHOLMOD )
-    target_link_libraries ( qrdemoc_int32   PUBLIC SPQR SuiteSparse::CHOLMOD )
-    target_link_libraries ( qrdemo_int32    PUBLIC SPQR SuiteSparse::CHOLMOD )
+    target_link_libraries ( qrsimplec_int32 PUBLIC SPQR CHOLMOD )
+    target_link_libraries ( qrdemoc_int32   PUBLIC SPQR CHOLMOD )
+    target_link_libraries ( qrdemo_int32    PUBLIC SPQR CHOLMOD )
 
     if ( SUITESPARSE_CUDA )
         target_link_libraries ( qrdemo_gpu PUBLIC SPQR SPQR_CUDA
-            SuiteSparse::CHOLMOD SuiteSparse::CHOLMOD_CUDA SuiteSparse::SuiteSparseConfig )
+            CHOLMOD CHOLMOD_CUDA SuiteSparseConfig )
         target_link_libraries ( qrdemo_gpu2 PUBLIC SPQR SPQR_CUDA
-            SuiteSparse::CHOLMOD SuiteSparse::CHOLMOD_CUDA SuiteSparse::SuiteSparseConfig )
+            CHOLMOD CHOLMOD_CUDA SuiteSparseConfig )
         target_link_libraries ( qrdemo_gpu3 PUBLIC SPQR SPQR_CUDA
-            SuiteSparse::CHOLMOD SuiteSparse::CHOLMOD_CUDA SuiteSparse::SuiteSparseConfig )
+            CHOLMOD CHOLMOD_CUDA SuiteSparseConfig )
     endif ( )
 
 else ( )
@@ -457,5 +498,6 @@ endif ( )
 # report status
 #-------------------------------------------------------------------------------
 
-include ( SuiteSparseReport )
-
+if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
+    include ( SuiteSparseReport )
+endif ( )

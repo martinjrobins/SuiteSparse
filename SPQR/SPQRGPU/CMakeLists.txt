@@ -58,24 +58,24 @@ endif ( )
 
 set ( SPQR_CUDA_INCLUDES ../Include )
 
-if ( TARGET SuiteSparse::GPUQREngine )
+if ( TARGET GPUQREngine )
     target_include_directories ( SPQR_CUDA PRIVATE
-        "$<TARGET_PROPERTY:SuiteSparse::GPUQREngine,INTERFACE_INCLUDE_DIRECTORIES>" )
+        "$<TARGET_PROPERTY:GPUQREngine,INTERFACE_INCLUDE_DIRECTORIES>" )
     target_include_directories ( SPQR_CUDA_static PRIVATE
-        "$<TARGET_PROPERTY:SuiteSparse::GPUQREngine,INTERFACE_INCLUDE_DIRECTORIES>" )
+        "$<TARGET_PROPERTY:GPUQREngine,INTERFACE_INCLUDE_DIRECTORIES>" )
 endif ( )
 
-if ( TARGET SuiteSparse::GPURuntime )
+if ( TARGET GPURuntime )
     target_include_directories ( SPQR_CUDA PRIVATE
-        "$<TARGET_PROPERTY:SuiteSparse::GPURuntime,INTERFACE_INCLUDE_DIRECTORIES>" )
+        "$<TARGET_PROPERTY:GPURuntime,INTERFACE_INCLUDE_DIRECTORIES>" )
     target_include_directories ( SPQR_CUDA_static PRIVATE
-        "$<TARGET_PROPERTY:SuiteSparse::GPURuntime,INTERFACE_INCLUDE_DIRECTORIES>" )
+        "$<TARGET_PROPERTY:GPURuntime,INTERFACE_INCLUDE_DIRECTORIES>" )
 endif ( )
 
 target_include_directories ( SPQR_CUDA PRIVATE
         ${CUDAToolkit_INCLUDE_DIRS}
         ${SPQR_CUDA_INCLUDES}
-        "$<TARGET_PROPERTY:SuiteSparse::SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
+        "$<TARGET_PROPERTY:SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
 set_target_properties ( SPQR_CUDA PROPERTIES POSITION_INDEPENDENT_CODE ON )
 set_target_properties ( SPQR_CUDA PROPERTIES CUDA_SEPARABLE_COMPILATION ON )
 target_compile_definitions ( SPQR_CUDA PRIVATE "SUITESPARSE_CUDA" )
@@ -84,20 +84,20 @@ if ( NOT NSTATIC )
     target_include_directories ( SPQR_CUDA_static PRIVATE
         ${CUDAToolkit_INCLUDE_DIRS}
         ${SPQR_CUDA_INCLUDES}
-        "$<TARGET_PROPERTY:SuiteSparse::SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
+        "$<TARGET_PROPERTY:SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
     set_target_properties ( SPQR_CUDA_static PROPERTIES CUDA_SEPARABLE_COMPILATION ON )
     set_target_properties ( SPQR_CUDA_static PROPERTIES POSITION_INDEPENDENT_CODE ON )
     target_compile_definitions ( SPQR_CUDA_static PRIVATE "SUITESPARSE_CUDA" )
 
 
-    if ( TARGET SuiteSparse::CHOLMOD_static )
-        target_link_libraries ( SPQR_CUDA_static PUBLIC SuiteSparse::CHOLMOD_static )
+    if ( TARGET CHOLMOD_static )
+        target_link_libraries ( SPQR_CUDA_static PUBLIC CHOLMOD_static )
     else ( )
-        target_link_libraries ( SPQR_CUDA_static PUBLIC SuiteSparse::CHOLMOD )
+        target_link_libraries ( SPQR_CUDA_static PUBLIC CHOLMOD )
     endif ( )
 endif ( )
 
-target_link_libraries ( SPQR_CUDA PRIVATE SuiteSparse::CHOLMOD )
+target_link_libraries ( SPQR_CUDA PRIVATE CHOLMOD )
 
 target_link_libraries ( SPQR_CUDA PRIVATE CUDA::nvrtc CUDA::cudart_static
     CUDA::nvToolsExt CUDA::cublas )
