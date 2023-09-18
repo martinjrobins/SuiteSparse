@@ -23,29 +23,28 @@ message ( STATUS "Building GPUQRENGINE version: v"
     ${GPUQRENGINE_VERSION_SUB} " (" ${GPUQRENGINE_DATE} ")" )
 
 #-------------------------------------------------------------------------------
+# define the project
+#-------------------------------------------------------------------------------
+
+project ( gpuqrengine 
+    VERSION "${GPUQRENGINE_VERSION_MAJOR}.${GPUQRENGINE_VERSION_MINOR}.${GPUQRENGINE_VERSION_SUB}"
+    LANGUAGES C CXX )
+
+#-------------------------------------------------------------------------------
 # SuiteSparse policies
 #-------------------------------------------------------------------------------
 
 set ( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-    ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/cmake_modules )
+    ${PROJECT_SOURCE_DIR}/../SuiteSparse_config/cmake_modules )
 
 option ( ENABLE_CUDA "Enable CUDA acceleration" on )
 
 include ( SuiteSparsePolicy )
 
-#-------------------------------------------------------------------------------
-# define the project
-#-------------------------------------------------------------------------------
-
 if ( SUITESPARSE_CUDA )
-    project ( gpuqrengine 
-        VERSION "${GPUQRENGINE_VERSION_MAJOR}.${GPUQRENGINE_VERSION_MINOR}.${GPUQRENGINE_VERSION_SUB}"
-        LANGUAGES C CXX CUDA )
+    enable_language ( CUDA )
 else ( )
     # CUDA not available
-    project ( gpuqrengine 
-        VERSION "${GPUQRENGINE_VERSION_MAJOR}.${GPUQRENGINE_VERSION_MINOR}.${GPUQRENGINE_VERSION_SUB}"
-        LANGUAGES C CXX )
     message ( STATUS "CUDA not enabled:  library will be empty" )
 endif ( )
 
@@ -54,29 +53,45 @@ endif ( )
 #-------------------------------------------------------------------------------
 
 # for the library itself
-find_package ( SuiteSparse_config 7.2.0
-    PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/build NO_DEFAULT_PATH )
-if ( NOT TARGET SuiteSparse::SuiteSparseConfig )
-    find_package ( SuiteSparse_config 7.2.0 REQUIRED )
-endif ( )
+if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
+    find_package ( SuiteSparse_config 7.2.0
+        PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/build NO_DEFAULT_PATH )
+    if ( NOT TARGET SuiteSparse::SuiteSparseConfig )
+        find_package ( SuiteSparse_config 7.2.0 REQUIRED )
+    endif ( )
+    add_library ( SuiteSparseConfig ALIAS SuiteSparse::SuiteSparseConfig )
+    if ( NOT NSTATIC AND TARGET SuiteSparse::SuiteSparseConfig_static )
+        add_library ( SuiteSparseConfig_static ALIAS SuiteSparse::SuiteSparseConfig_static )
+    endif ( )
 
-if ( SUITESPARSE_CUDA )
-    find_package ( SuiteSparse_GPURuntime 3.2.0
-        PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_GPURuntime/build NO_DEFAULT_PATH )
-    if ( NOT TARGET SuiteSparse::GPURuntime )
-        find_package ( SuiteSparse_GPURuntime 3.2.0 REQUIRED )
+    if ( SUITESPARSE_CUDA )
+        find_package ( SuiteSparse_GPURuntime 3.2.0
+            PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_GPURuntime/build NO_DEFAULT_PATH )
+        if ( NOT TARGET SuiteSparse::GPURuntime )
+            find_package ( SuiteSparse_GPURuntime 3.2.0 REQUIRED )
+        endif ( )
+        add_library ( GPURuntime ALIAS SuiteSparse::GPURuntime )
+        if ( NOT NSTATIC AND TARGET SuiteSparse::GPURuntime_static )
+            add_library ( GPURuntime_static ALIAS SuiteSparse::GPURuntime_static )
+        endif ( )
     endif ( )
 endif ( )
 
 # Demo disabled for GPUQREngine v2.x
 set ( DEMO_OK false )
 
-if ( DEMO AND DEMO_OK )
+if ( NOT SUITESPARSE_ROOT_CMAKELISTS AND DEMO AND DEMO_OK )
     # for the demo only:
     find_package ( AMD 3.2.0
         PATHS ${CMAKE_SOURCE_DIR}/../AMD/build NO_DEFAULT_PATH )
     if ( NOT TARGET SuiteSparse::AMD )
         find_package ( AMD 3.2.0 )
+    endif ( )
+    if ( AMD_FOUND )
+        add_library ( AMD ALIAS SuiteSparse::AMD )
+        if ( NOT NSTATIC AND TARGET SuiteSparse::AMD_static )
+            add_library ( AMD_static ALIAS SuiteSparse::AMD_static )
+        endif ( )
     endif ( )
 
     find_package ( COLAMD 3.2.0
@@ -84,11 +99,23 @@ if ( DEMO AND DEMO_OK )
     if ( NOT TARGET SuiteSparse::COLAMD )
         find_package ( COLAMD 3.2.0 )
     endif ( )
+    if ( COLAMD_FOUND )
+        add_library ( COLAMD ALIAS SuiteSparse::COLAMD )
+        if ( NOT NSTATIC AND TARGET SuiteSparse::COLAMD_static )
+            add_library ( COLAMD_static ALIAS SuiteSparse::COLAMD_static )
+        endif ( )
+    endif ( )
 
     find_package ( CAMD 3.2.0
         PATHS ${CMAKE_SOURCE_DIR}/../CAMD/build NO_DEFAULT_PATH )
     if ( NOT TARGET SuiteSparse::CAMD )
         find_package ( CAMD 3.2.0 )
+    endif ( )
+    if ( CAMD_FOUND )
+        add_library ( CAMD ALIAS SuiteSparse::CAMD )
+        if ( NOT NSTATIC AND TARGET SuiteSparse::CAMD_static )
+            add_library ( CAMD_static ALIAS SuiteSparse::CAMD_static )
+        endif ( )
     endif ( )
 
     find_package ( CCOLAMD 3.2.0
@@ -96,17 +123,35 @@ if ( DEMO AND DEMO_OK )
     if ( NOT TARGET SuiteSparse::CCOLAMD )
         find_package ( CCOLAMD 3.2.0 )
     endif ( )
+    if ( CCOLAMD_FOUND )
+        add_library ( CCOLAMD ALIAS SuiteSparse::CCOLAMD )
+        if ( NOT NSTATIC AND TARGET SuiteSparse::CCOLAMD_static )
+            add_library ( CCOLAMD_static ALIAS SuiteSparse::CCOLAMD_static )
+        endif ( )
+    endif ( )
 
     find_package ( CHOLMOD 4.2.0
         PATHS ${CMAKE_SOURCE_DIR}/../CHOLMOD/build NO_DEFAULT_PATH )
     if ( NOT TARGET SuiteSparse::CHOLMOD )
         find_package ( CHOLMOD 4.2.0 )
     endif ( )
+    if ( CHOLMOD_FOUND )
+        add_library ( CHOLMOD ALIAS SuiteSparse::CHOLMOD )
+        if ( NOT NSTATIC AND TARGET SuiteSparse::CHOLMOD_static )
+            add_library ( CHOLMOD_static ALIAS SuiteSparse::CHOLMOD_static )
+        endif ( )
+    endif ( )
 
     find_package ( CHOLMOD_CUDA 4.2.0
         PATHS ${CMAKE_SOURCE_DIR}/../CHOLMOD/build NO_DEFAULT_PATH )
     if ( NOT TARGET SuiteSparse::CHOLMOD_CUDA )
         find_package ( CHOLMOD_CUDA 4.2.0 )
+    endif ( )
+    if ( CHOLMOD_CUDA_FOUND )
+        add_library ( CHOLMOD_CUDA ALIAS SuiteSparse::CHOLMOD_CUDA )
+        if ( NOT NSTATIC AND TARGET SuiteSparse::CHOLMOD_CUDA_static )
+            add_library ( CHOLMOD_CUDA_static ALIAS SuiteSparse::CHOLMOD_CUDA_static )
+        endif ( )
     endif ( )
 endif ( )
 
@@ -166,11 +211,11 @@ set_target_properties ( GPUQREngine PROPERTIES
 target_include_directories ( GPUQREngine PRIVATE
     ${CUDAToolkit_INCLUDE_DIRS}
     ${GPUQRENGINE_INCLUDES}
-    "$<TARGET_PROPERTY:SuiteSparse::SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
+    "$<TARGET_PROPERTY:SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
 
 if ( SUITESPARSE_CUDA )
     target_include_directories ( GPUQREngine PRIVATE
-        "$<TARGET_PROPERTY:SuiteSparse::GPURuntime,INTERFACE_INCLUDE_DIRECTORIES>" )
+        "$<TARGET_PROPERTY:GPURuntime,INTERFACE_INCLUDE_DIRECTORIES>" )
 
     set_target_properties ( GPUQREngine PROPERTIES POSITION_INDEPENDENT_CODE ON )
     set_target_properties ( GPUQREngine PROPERTIES CUDA_SEPARABLE_COMPILATION ON )
@@ -204,11 +249,11 @@ if ( NOT NSTATIC )
     target_include_directories ( GPUQREngine_static PRIVATE
         ${CUDAToolkit_INCLUDE_DIRS}
         ${GPUQRENGINE_INCLUDES}
-        "$<TARGET_PROPERTY:SuiteSparse::SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
+        "$<TARGET_PROPERTY:SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
 
     if ( SUITESPARSE_CUDA )
         target_include_directories ( GPUQREngine_static PRIVATE
-            "$<TARGET_PROPERTY:SuiteSparse::GPURuntime,INTERFACE_INCLUDE_DIRECTORIES>" )
+            "$<TARGET_PROPERTY:GPURuntime,INTERFACE_INCLUDE_DIRECTORIES>" )
 
         set_target_properties ( GPUQREngine_static PROPERTIES CUDA_SEPARABLE_COMPILATION on )
         set_target_properties ( GPUQREngine_static PROPERTIES POSITION_INDEPENDENT_CODE on )
@@ -312,9 +357,8 @@ if ( DEMO AND DEMO_OK )
 
     # Libraries required for Demo programs
     target_link_libraries ( gpuqrengine_demo PUBLIC GPUQREngine
-        SuiteSparse::CHOLMOD SuiteSparse::AMD SuiteSparse::COLAMD
-        SuiteSparse::CAMD SuiteSparse::CCOLAMD SuiteSparse::CHOLMOD_CUDA
-        SuiteSparse::GPURuntime SuiteSparse::SuiteSparseConfig )
+        CHOLMOD AMD COLAMD CAMD CCOLAMD CHOLMOD_CUDA
+        GPURuntime SuiteSparseConfig )
 
 else ( )
 
@@ -326,5 +370,6 @@ endif ( )
 # report status
 #-------------------------------------------------------------------------------
 
-include ( SuiteSparseReport )
-
+if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
+    include ( SuiteSparseReport )
+endif ( )

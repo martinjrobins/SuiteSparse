@@ -33,7 +33,7 @@ set ( SUITESPARSE_ALL_PROJECTS
 
 # lower-case list of extra projects that can be built by this root CMake file
 set ( SUITESPARSE_EXTRA_PROJECTS
-    "suitesparse_gpuruntime" )
+    "suitesparse_gpuruntime;gpuqrengine" )
 
 # lower-case list of known projects that can be built by this root CMake file
 set ( SUITESPARSE_KNOWN_PROJECTS "${SUITESPARSE_ALL_PROJECTS};${SUITESPARSE_EXTRA_PROJECTS}" )
@@ -43,7 +43,7 @@ set ( SUITESPARSE_ENABLE_PROJECTS "all" CACHE STRING
 
 if ( SUITESPARSE_CUDA )
     set ( SUITESPARSE_ALL_PROJECTS
-        "${SUITESPARSE_ALL_PROJECTS};suitesparse_gpuruntime" )
+        "${SUITESPARSE_ALL_PROJECTS};suitesparse_gpuruntime;gpuqrengine" )
 endif ( )
 
 # expand "all" early on
@@ -127,6 +127,13 @@ if ( "cholmod" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
     endif ( )
 endif ( )
 
+if ( SUITESPARSE_CUDA AND "gpuqrengine" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+    if ( NOT "suitesparse_gpuruntime" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+        message ( STATUS "Adding \"suitesparse_gpuruntime\" to the list of built targets." )
+        list ( APPEND SUITESPARSE_ENABLE_PROJECTS "suitesparse_gpuruntime" )
+    endif ( )
+endif ( )
+
 if ( "mongoose" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "amd" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "btf" IN_LIST SUITESPARSE_ENABLE_PROJECTS
@@ -139,7 +146,8 @@ if ( "mongoose" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "klu" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "umfpack" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "rbio" IN_LIST SUITESPARSE_ENABLE_PROJECTS
-        OR "suitesparse_gpuruntime" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+        OR "suitesparse_gpuruntime" IN_LIST SUITESPARSE_ENABLE_PROJECTS
+        OR "gpuqrengine" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
     if ( NOT "suitesparse_config" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
         message ( STATUS "Adding \"suitesparse_config\" to the list of built targets." )
         list ( APPEND SUITESPARSE_ENABLE_PROJECTS "suitesparse_config" )
@@ -204,6 +212,10 @@ endif ( )
 
 if ( "suitesparse_gpuruntime" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
     add_subdirectory ( "SuiteSparse_GPURuntime" )
+endif ( )
+
+if ( "gpuqrengine" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+    add_subdirectory ( "GPUQREngine" )
 endif ( )
 
 #-------------------------------------------------------------------------------
