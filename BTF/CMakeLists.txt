@@ -2,7 +2,7 @@
 # SuiteSparse/BTF/CMakeLists.txt:  cmake for BTF
 #-------------------------------------------------------------------------------
 
-# BTF, Copyright (c) 2004-2022, University of Florida.  All Rights Reserved.
+# BTF, Copyright (c) 2004-2023, University of Florida.  All Rights Reserved.
 # Author: Timothy A. Davis.
 # SPDX-License-Identifier: LGPL-2.1+
 
@@ -23,15 +23,6 @@ message ( STATUS "Building BTF version: v"
     ${BTF_VERSION_SUB} " (" ${BTF_DATE} ")" )
 
 #-------------------------------------------------------------------------------
-# SuiteSparse policies
-#-------------------------------------------------------------------------------
-
-set ( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-    ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/cmake_modules )
-
-include ( SuiteSparsePolicy )
-
-#-------------------------------------------------------------------------------
 # define the project
 #-------------------------------------------------------------------------------
 
@@ -40,13 +31,28 @@ project ( btf
     LANGUAGES C )
 
 #-------------------------------------------------------------------------------
+# SuiteSparse policies
+#-------------------------------------------------------------------------------
+
+set ( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+    ${PROJECT_SOURCE_DIR}/../SuiteSparse_config/cmake_modules )
+
+include ( SuiteSparsePolicy )
+
+#-------------------------------------------------------------------------------
 # find library dependencies
 #-------------------------------------------------------------------------------
 
-find_package ( SuiteSparse_config 7.2.0
-    PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/build NO_DEFAULT_PATH )
-if ( NOT TARGET SuiteSparse::SuiteSparseConfig )
-    find_package ( SuiteSparse_config 7.2.0 REQUIRED )
+if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
+    find_package ( SuiteSparse_config 7.2.0
+        PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/build NO_DEFAULT_PATH )
+    if ( NOT TARGET SuiteSparse::SuiteSparseConfig )
+        find_package ( SuiteSparse_config 7.2.0 REQUIRED )
+    endif ( )
+    add_library ( SuiteSparseConfig ALIAS SuiteSparse::SuiteSparseConfig )
+    if ( NOT NSTATIC AND TARGET SuiteSparse::SuiteSparseConfig_static )
+        add_library ( SuiteSparseConfig_static ALIAS SuiteSparse::SuiteSparseConfig_static )
+    endif ( )
 endif ( )
 
 #-------------------------------------------------------------------------------
@@ -113,14 +119,14 @@ endif ( )
 #-------------------------------------------------------------------------------
 
 # SuiteSparseConfig:
-target_link_libraries ( BTF PRIVATE SuiteSparse::SuiteSparseConfig )
+target_link_libraries ( BTF PRIVATE SuiteSparseConfig )
 target_include_directories ( BTF PUBLIC
-    "$<TARGET_PROPERTY:SuiteSparse::SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
+    "$<TARGET_PROPERTY:SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
 if ( NOT NSTATIC )
-    if ( TARGET SuiteSparse::SuiteSparseConfig_static )
-        target_link_libraries ( BTF_static PUBLIC SuiteSparse::SuiteSparseConfig_static )
+    if ( TARGET SuiteSparseConfig_static )
+        target_link_libraries ( BTF_static PUBLIC SuiteSparseConfig_static )
     else ( )
-        target_link_libraries ( BTF_static PUBLIC SuiteSparse::SuiteSparseConfig )
+        target_link_libraries ( BTF_static PUBLIC SuiteSparseConfig )
     endif ( )
 endif ( )
 
@@ -208,5 +214,6 @@ endif ( )
 # report status
 #-------------------------------------------------------------------------------
 
-include ( SuiteSparseReport )
-
+if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
+    include ( SuiteSparseReport )
+endif ( )
