@@ -332,6 +332,8 @@ Packages in SuiteSparse, and files in this directory:
                 author for all modules: Tim Davis
                 CHOLMOD/Modify module authors: Tim Davis and William W. Hager
 
+    CMakeLists.txt    optional, to compile all of SuiteSparse.  See below.
+
     COLAMD      column approximate minimum degree ordering.  This is the
                 built-in COLAMD function in MATLAB.
                 authors (of the code): Tim Davis and Stefan Larimore
@@ -546,24 +548,35 @@ set all your paths at the start of each MATLAB session.
 QUICK START FOR THE C/C++ LIBRARIES:
 -----------------------------------------------------------------------------
 
-For Linux and Mac: type the following in this directory (requires system
-priviledge to do the `sudo make install`):
+Type the following in this directory (requires system priviledge to do the
+`sudo make install`):
 
-    make
-    sudo make install
-
-All libraries will be created and copied into the default system-wide folder
-(/usr/local/lib on Linux).  All include files need by the applications that use
-SuiteSparse are copied into /usr/local/include (on Linux).
-
-For Windows, import each `*/CMakeLists.txt` file into MS Visual Studio.
-A single top-level CMake script is being considered as a feature in the
-future.  Be sure to specify the build type as Release; for example, to
-build `SuiteSparse_config` on Windows in the command window:
-
-    cd SuiteSparse_config/build
+    mkdir -p build && cd build
     cmake ..
-    cmke --build . --config Release
+    cmake --build .
+    sudo cmake --install .
+
+All libraries will be created and installed into the default system-wide folder
+(/usr/local/lib on Linux).  All include files needed by the applications that
+use SuiteSparse are installed into /usr/local/include (on Linux).
+
+To build only a subset of libraries, set `SUITESPARSE_ENABLE_PROJECTS` when
+configuring with CMake.  E.g., to build and install CHOLMOD and CXSparse
+(including their dependencies), use the following commands:
+
+    mkdir -p build && cd build
+    cmake -DSUITESPARSE_ENABLE_PROJECTS="cholmod;cxsparse" ..
+    cmake --build .
+    sudo cmake --install .
+
+For Windows (MSVC), import the `CMakeLists.txt` file into MS Visual Studio.
+Be sure to specify the build type as Release; for example, to build SuiteSparse
+on Windows in the command window, run:
+
+    mkdir -p build && cd build
+    cmake ..
+    cmake --build . --config Release
+    sudo cmake --install .
 
 Be sure to first install all required libraries:  BLAS and LAPACK for UMFPACK,
 CHOLMOD, and SPQR, and GMP and MPFR for SPEX.  Be sure to use the latest
@@ -574,7 +587,10 @@ see the SPEX user guide for details).
 To compile the libraries and install them only in SuiteSparse/lib (not
 /usr/local/lib), do this instead in the top-level of SuiteSparse:
 
-    make local
+    mkdir -p build && cd build
+    cmake -DCMAKE_INSTALL_PREFIX=.. ..
+    cmake --build .
+    sudo cmake --install .
 
 If you add /home/me/SuiteSparse/lib to your library search path
 (`LD_LIBRARY_PATH` in Linux), you can do the following (for example):
@@ -584,10 +600,9 @@ If you add /home/me/SuiteSparse/lib to your library search path
 
 To change the C and C++ compilers, and to compile in parallel use:
 
-    CC=gcc CX=g++ JOBS=32 make
+    cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER==g++ ..
 
-for example, which changes the compiler to gcc and g++, and runs make with
-'make -j32', in parallel with 32 jobs.
+for example, which changes the compiler to gcc and g++.
 
 This will work on Linux/Unix and the Mac.  It should automatically detect if
 you have the Intel compilers or not, and whether or not you have CUDA.
@@ -630,68 +645,87 @@ Compilation options
 
 You can set specific options for CMake with the command (for example):
 
-    CMAKE_OPTIONS="-DNPARTITION=1 -DNSTATIC=1 -DCMAKE_BUILD_TYPE=Debug" make
+    cmake -DNPARTITION=ON -DNSTATIC=ON -DCMAKE_BUILD_TYPE=Debug ..
 
 That command will compile all of SuiteSparse except for CHOLMOD/Partition
-Module (because of -DNPARTITION=1).  Debug mode will be used (the build type).
-The static libraries will not be built (since -DNSTATIC=1 is set).
+Module (because of `-DNPARTITION=ON`).  Debug mode will be used (the build
+type).  The static libraries will not be built (since `-DNSTATIC=ON` is set).
 
-    CMAKE_BUILD_TYPE:   Default: "Release", use "Debug" for debugging.
+* `SUITESPARSE_ENABLE_PROJECTS`:
 
-    ENABLE_CUDA:        if set to true, CUDA is enabled for the project.
-                        Default: true for CHOLMOD and SPQR; false otherwise
+  Semicolon separated list of projects to be built or `all`.
+  Default: `all` in which case the following projects are built:
 
-    LOCAL_INSTALL:      if true, "cmake --install" will install
-                        into SuiteSparse/lib and SuiteSparse/include.
-                        if false, "cmake --install" will install into the
-                        default prefix (or the one configured with
-                        CMAKE_INSTALL_PREFIX).
-                        Default: false
+  `suitesparse_config;mongoose;amd;btf;camd;ccolamd;colamd;cholmod;cxsparse;ldl;klu;umfpack;rbio;spqr;graphblas;spex`
 
-    CMAKE_INSTALL_PREFIX:   defines the install location (default on Linux is
-                        /usr/local).  For example, this command in the top
-                        level SuiteSparse folder will set the install directory
-                        to "/stuff", used by the subsequent "sudo make install":
+  Additionally, this list is extended to include
+  `suitesparse_gpuruntime;gpuqrengine` if a working CUDA environment is
+  detected.
 
-                            CMAKE_OPTIONS="-DCMAKE_INSTALL_PREFIX=/stuff" make
-                            sudo make install
+* `CMAKE_BUILD_TYPE`:
 
-    NSTATIC:            if true, static libraries are not built.
-                        Default: false, except for GraphBLAS, which
-                        takes a long time to compile so the default for
-                        GraphBLAS is true.  For Mongoose, the NSTATIC setting
-                        is treated as if it always false, since the mongoose
-                        program is built with the static library.
+  Default: "Release", use "Debug" for debugging.
 
-    SUITESPARSE_CUDA_ARCHITECTURES:  a string, such as "all" or
-                        "35;50;75;80" that lists the CUDA architectures to use
-                        when compiling CUDA kernels with nvcc.  The "all"
-                        option requires cmake 3.23 or later.
-                        Default: "52;75;80".
+* `ENABLE_CUDA`:
 
-    BLA_VENDOR          a string.  Leave unset, or use "ANY" to select any BLAS
-                        library (the default).  Or set to the name of a
-                        BLA_VENDOR defined by FindBLAS.cmake.  See:
-                        https://cmake.org/cmake/help/latest/module/FindBLAS.html#blas-lapack-vendors
+  If set to true, CUDA is enabled for the project.  Default: true for CHOLMOD
+  and SPQR; false otherwise.
 
-    ALLOW_64BIT_BLAS    if true: look for a 64-bit BLAS.  If false: 32-bit only.
-                        Default: false.
+* `CMAKE_INSTALL_PREFIX`:
 
-    NOPENMP             if true: OpenMP is not used.  Default: false.
-                        UMFPACK, CHOLMOD, SPQR, and GraphBLAS will be slow.
-                        Note that BLAS and LAPACK may still use OpenMP
-                        internally; if you wish to disable OpenMP in an entire
-                        application, select a single-threaded BLAS/LAPACK.
-                        WARNING: GraphBLAS may not be thread-safe if built
-                        without OpenMP (see the User Guide for details).
+  Defines the install location (default on Linux is `/usr/local`).  For example,
+  this command in the top level SuiteSparse folder will set the install
+  directory to `/stuff`, used by the subsequent "sudo cmake --install .":
+```
+    cmake -DCMAKE_INSTALL_PREFIX=/stuff ..
+    sudo cmake --install .
+```
 
-    DEMO                if true: build the demo programs for each package.
-                        Default: false.
+* `NSTATIC`:
+
+  If true, static libraries are not built.
+  Default: false, except for GraphBLAS, which takes a long time to compile so
+  the default for GraphBLAS is true.
+
+* `SUITESPARSE_CUDA_ARCHITECTURES`:
+
+  A string, such as "all" or "35;50;75;80" that lists the CUDA architectures to
+  use when compiling CUDA kernels with nvcc.  The "all" option requires CMake
+  3.23 or later.  Default: "52;75;80".
+
+* `BLA_VENDOR`:
+
+  A string.  Leave unset, or use "ANY" to select any BLAS library (the
+  default).  Or set to the name of a BLA_VENDOR defined by FindBLAS.cmake.
+  See:
+  https://cmake.org/cmake/help/latest/module/FindBLAS.html#blas-lapack-vendors
+
+* `ALLOW_64BIT_BLAS`:
+
+  If true, look for a 64-bit BLAS.  If false: 32-bit only.  Default: false.
+
+* `NOPENMP`:
+
+  If true, OpenMP is not used.  Default: false.
+
+  UMFPACK, CHOLMOD, SPQR, and GraphBLAS will be slow.
+
+  Note that BLAS and LAPACK may still use OpenMP internally; if you wish to
+  disable OpenMP in an entire application, select a single-threaded
+  BLAS/LAPACK.
+
+  WARNING: GraphBLAS may not be thread-safe if built without OpenMP (see the
+  User Guide for details).
+
+* `DEMO`:
+  If true, build the demo programs for each package.  Default: false.
 
 Additional options are available within specific packages:
 
-    NCHOLMOD            if true, UMFPACK and KLU do not use CHOLMOD for
-                        additional (optional) ordering options
+* `NCHOLMOD`:
+
+  If true, UMFPACK and KLU do not use CHOLMOD for additional (optional)
+  ordering options.
 
 CHOLMOD is composed of a set of Modules that can be independently selected;
 all options default to false:
