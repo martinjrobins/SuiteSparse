@@ -2,7 +2,7 @@
 # SuiteSparse/SuiteSparse_GPURuntime/CMakeLists.txt
 #-------------------------------------------------------------------------------
 
-# SuiteSparse_GPURuntime, Copyright (c) 2013-2022, Timothy A Davis,
+# SuiteSparse_GPURuntime, Copyright (c) 2013-2023, Timothy A Davis,
 # Sencer Nuri Yeralan, and Sanjay Ranka.  All Rights Reserved.
 # SPDX-License-Identifier: GPL-2.0+
 
@@ -70,8 +70,7 @@ configure_file ( "Config/SuiteSparse_GPURuntime.hpp.in"
 #-------------------------------------------------------------------------------
 
 if ( SUITESPARSE_CUDA )
-    set ( CMAKE_CUDA_FLAGS "-cudart=static -lineinfo -DSUITESPARSE_CUDA" )
-    set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSUITESPARSE_CUDA" )
+    set ( CMAKE_CUDA_FLAGS "-cudart=static -lineinfo" )
     message ( STATUS "C++ flags for CUDA:  ${CMAKE_CXX_FLAGS}" )
     message ( STATUS "nvcc flags for CUDA: ${CMAKE_CUDA_FLAGS}" )
 endif ( )
@@ -107,6 +106,7 @@ if ( SUITESPARSE_CUDA )
     set_target_properties ( GPURuntime PROPERTIES CUDA_SEPARABLE_COMPILATION ON )
     target_link_libraries ( GPURuntime PRIVATE CUDA::nvrtc CUDA::cudart_static
         CUDA::nvToolsExt CUDA::cublas )
+    target_compile_definitions ( GPURuntime PRIVATE "SUITESPARSE_CUDA" )
 endif ( )
 
 target_include_directories ( GPURuntime 
@@ -142,6 +142,7 @@ if ( NOT NSTATIC )
         set_target_properties ( GPURuntime_static PROPERTIES POSITION_INDEPENDENT_CODE on )
         target_link_libraries ( GPURuntime_static PUBLIC CUDA::nvrtc CUDA::cudart_static
             CUDA::nvToolsExt CUDA::cublas )
+        target_compile_definitions ( GPURuntime_static PRIVATE "SUITESPARSE_CUDA" )
     endif ( )
 
     target_include_directories ( GPURuntime_static 
