@@ -128,8 +128,7 @@ configure_file ( "Config/GPUQREngine.hpp.in"
 #-------------------------------------------------------------------------------
 
 if ( SUITESPARSE_CUDA )
-    set ( CMAKE_CUDA_FLAGS "-cudart=static -lineinfo -DSUITESPARSE_CUDA" )
-    set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSUITESPARSE_CUDA" )
+    set ( CMAKE_CUDA_FLAGS "-cudart=static -lineinfo" )
     message ( STATUS "C++ flags for CUDA:  ${CMAKE_CXX_FLAGS}" )
     message ( STATUS "nvcc flags for CUDA: ${CMAKE_CUDA_FLAGS}" )
 endif ( )
@@ -176,6 +175,7 @@ if ( SUITESPARSE_CUDA )
     set_target_properties ( GPUQREngine PROPERTIES CUDA_SEPARABLE_COMPILATION ON )
     target_link_libraries ( GPUQREngine PRIVATE CUDA::nvrtc CUDA::cudart_static
         CUDA::nvToolsExt CUDA::cublas )
+    target_compile_definitions ( GPUQREngine PRIVATE "SUITESPARSE_CUDA" )
 endif ( )
 
 target_include_directories ( GPUQREngine
@@ -214,6 +214,7 @@ if ( NOT NSTATIC )
         set_target_properties ( GPUQREngine_static PROPERTIES POSITION_INDEPENDENT_CODE on )
         target_link_libraries ( GPUQREngine_static PUBLIC CUDA::nvrtc CUDA::cudart_static
             CUDA::nvToolsExt CUDA::cublas )
+        target_compile_definitions ( GPUQREngine_static PRIVATE "SUITESPARSE_CUDA" )
     endif ( )
 
     target_include_directories ( GPUQREngine_static
