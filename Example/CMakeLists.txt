@@ -79,14 +79,6 @@ find_package ( SPEX 2.2.1 REQUIRED )
 find_package ( SPQR 4.2.1 REQUIRED )
 find_package ( UMFPACK 6.2.1 REQUIRED )
 
-if ( TARGET CUDA::nvrtc )
-    # CHOLMOD and SPQR have been compiled with CUDA enabled.
-#   find_package ( CHOLMOD_CUDA 4.2.0 REQUIRED )
-#   find_package ( SPQR_CUDA 4.2.0 REQUIRED )
-    find_package ( SuiteSparse_GPURuntime 3.2.0 REQUIRED )
-    find_package ( GPUQREngine 3.2.0 REQUIRED )
-endif ( )
-
 # look for all external libaries:
 find_package ( OpenMP REQUIRED )
 find_package ( GMP 6.1.2 REQUIRED )
@@ -301,19 +293,6 @@ else ( )
     target_link_libraries ( my_cxx_static PUBLIC SuiteSparse::CXSparse )
 endif ( )
 
-# GPUQREngine:
-if ( ENABLE_CUDA )
-    target_link_libraries ( my PRIVATE SuiteSparse::GPUQREngine )
-    target_link_libraries ( my_cxx PRIVATE SuiteSparse::GPUQREngine )
-    if ( TARGET SuiteSparse::GPUQREngine_static )
-        target_link_libraries ( my_static PUBLIC SuiteSparse::GPUQREngine_static )
-        target_link_libraries ( my_cxx_static PUBLIC SuiteSparse::GPUQREngine_static )
-    else ( )
-        target_link_libraries ( my_static PUBLIC SuiteSparse::GPUQREngine )
-        target_link_libraries ( my_cxx_static PUBLIC SuiteSparse::GPUQREngine )
-    endif ( )
-endif ( )
-
 # GraphBLAS:
 if ( TARGET SuiteSparse::GraphBLAS )
     target_link_libraries ( my PRIVATE SuiteSparse::GraphBLAS )
@@ -418,19 +397,6 @@ if ( TARGET SuiteSparse::SuiteSparseConfig_static )
 else ( )
     target_link_libraries ( my_static PUBLIC SuiteSparse::SuiteSparseConfig )
     target_link_libraries ( my_cxx_static PUBLIC SuiteSparse::SuiteSparseConfig )
-endif ( )
-
-# GPURuntime:
-if ( ENABLE_CUDA )
-    target_link_libraries ( my PRIVATE SuiteSparse::GPURuntime )
-    target_link_libraries ( my_cxx PRIVATE SuiteSparse::GPURuntime )
-    if ( TARGET SuiteSparse::GPURuntime_static )
-        target_link_libraries ( my_static PUBLIC SuiteSparse::GPURuntime_static )
-        target_link_libraries ( my_cxx_static PUBLIC SuiteSparse::GPURuntime_static )
-    else ( )
-        target_link_libraries ( my_static PUBLIC SuiteSparse::GPURuntime )
-        target_link_libraries ( my_cxx_static PUBLIC SuiteSparse::GPURuntime )
-    endif ( )
 endif ( )
 
 # UMFPACK:
