@@ -50,7 +50,7 @@ endif ( )
 if ( "all" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
     set ( SUITESPARSE_ENABLE_PROJECTS "${SUITESPARSE_ENABLE_PROJECTS};${SUITESPARSE_ALL_PROJECTS}" )
     list ( REMOVE_ITEM SUITESPARSE_ENABLE_PROJECTS "all" )
-    list ( REMOVE_DUPLICATES  SUITESPARSE_ENABLE_PROJECTS )
+    list ( REMOVE_DUPLICATES SUITESPARSE_ENABLE_PROJECTS )
 endif ( )
 
 # check for unknown projects in list
@@ -69,6 +69,18 @@ option ( NCHOLMOD "ON: do not use CHOLMOD.  OFF (default): use CHOLMOD" OFF )
 # overwrite NSTATIC specifically for GraphBLAS because building the library
 # takes a long time
 option ( GRAPHBLAS_NSTATIC "ON (default): set NSTATIC for GraphBLAS project.  OFF: Use same value of NSTATIC for GraphBLAS like in the other projects" ON )
+
+# options to build with libraries installed on the system instead of building
+# dependencies automatically
+option ( USE_SYSTEM_BTF "ON: use BTF libraries installed on the build system.  OFF (default): Automatically build BTF as dependency if needed." OFF )
+option ( USE_SYSTEM_CHOLMOD "ON: use CHOLMOD libraries installed on the build system.  OFF (default): Automatically build CHOLMOD as dependency if needed." OFF )
+option ( USE_SYSTEM_AMD "ON: use AMD libraries installed on the build system.  OFF (default): Automatically build AMD as dependency if needed." OFF )
+option ( USE_SYSTEM_COLAMD "ON: use COLAMD libraries installed on the build system.  OFF (default): Automatically build COLAMD as dependency if needed." OFF )
+option ( USE_SYSTEM_CAMD "ON: use CAMD libraries installed on the build system.  OFF (default): Automatically build CAMD as dependency if needed." OFF )
+option ( USE_SYSTEM_CCOLAMD "ON: use CCOLAMD libraries installed on the build system.  OFF (default): Automatically build CCOLAMD as dependency if needed." OFF )
+option ( USE_SYSTEM_GPUQRENGINE "ON: use GPUQREngine libraries installed on the build system.  OFF (default): Automatically build GPUQREngine as dependency if needed." OFF )
+option ( USE_SYSTEM_SUITESPARSE_GPURUNTIME "ON: use SuiteSparse GPURuntime libraries installed on the build system.  OFF (default): Automatically build SuiteSparse GPURuntime as dependency if needed." OFF )
+option ( USE_SYSTEM_SUITESPARSE_CONFIG "ON: use SuiteSparse Config libraries installed on the build system.  OFF (default): Automatically build SuiteSparse Config as dependency if needed." OFF )
 
 #-------------------------------------------------------------------------------
 # global variables
@@ -93,7 +105,7 @@ include ( SuiteSparsePolicy )
 #-------------------------------------------------------------------------------
 
 if ( "klu" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
-    if ( NOT "btf" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+    if ( NOT USE_SYSTEM_BTF AND NOT "btf" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
         message ( STATUS "Adding \"btf\" to the list of built targets." )
         list ( APPEND SUITESPARSE_ENABLE_PROJECTS "btf" )
     endif ( )
@@ -102,7 +114,7 @@ endif ( )
 if ( "klu" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "umfpack" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "spqr" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
-    if ( NOT NCHOLMOD AND NOT "cholmod" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+    if ( NOT USE_SYSTEM_CHOLMOD AND NOT NCHOLMOD AND NOT "cholmod" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
         message ( STATUS "Adding \"cholmod\" to the list of built targets." )
         list ( APPEND SUITESPARSE_ENABLE_PROJECTS "cholmod" )
     endif ( )
@@ -112,7 +124,7 @@ if ( "cholmod" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "ldl" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "umfpack" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "spex" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
-    if ( NOT "amd" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+    if ( NOT USE_SYSTEM_AMD AND NOT "amd" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
         message ( STATUS "Adding \"amd\" to the list of built targets." )
         list ( APPEND SUITESPARSE_ENABLE_PROJECTS "amd" )
     endif ( )
@@ -120,32 +132,32 @@ endif ( )
 
 if ( "cholmod" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "spex" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
-    if ( NOT "colamd" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+    if ( NOT USE_SYSTEM_COLAMD AND NOT "colamd" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
         message ( STATUS "Adding \"colamd\" to the list of built targets." )
         list ( APPEND SUITESPARSE_ENABLE_PROJECTS "colamd" )
     endif ( )
 endif ( )
 
 if ( NOT NCAMD AND "cholmod" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
-    if ( NOT "camd" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+    if ( NOT USE_SYSTEM_CAMD AND NOT "camd" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
         message ( STATUS "Adding \"camd\" to the list of built targets." )
         list ( APPEND SUITESPARSE_ENABLE_PROJECTS "camd" )
     endif ( )
-    if ( NOT "ccolamd" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+    if ( NOT USE_SYSTEM_CCOLAMD AND NOT "ccolamd" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
         message ( STATUS "Adding \"ccolamd\" to the list of built targets." )
         list ( APPEND SUITESPARSE_ENABLE_PROJECTS "ccolamd" )
     endif ( )
 endif ( )
 
 if ( SUITESPARSE_CUDA AND "spqr" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
-    if ( NOT "gpuqrengine" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+    if ( NOT USE_SYSTEM_GPUQRENGINE AND NOT "gpuqrengine" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
         message ( STATUS "Adding \"gpuqrengine\" to the list of built targets." )
         list ( APPEND SUITESPARSE_ENABLE_PROJECTS "gpuqrengine" )
     endif ( )
 endif ( )
 
 if ( SUITESPARSE_CUDA AND "gpuqrengine" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
-    if ( NOT "suitesparse_gpuruntime" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+    if ( NOT USE_SYSTEM_SUITESPARSE_GPURUNTIME AND NOT "suitesparse_gpuruntime" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
         message ( STATUS "Adding \"suitesparse_gpuruntime\" to the list of built targets." )
         list ( APPEND SUITESPARSE_ENABLE_PROJECTS "suitesparse_gpuruntime" )
     endif ( )
@@ -167,7 +179,7 @@ if ( "mongoose" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "gpuqrengine" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "spqr" IN_LIST SUITESPARSE_ENABLE_PROJECTS
         OR "spex" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
-    if ( NOT "suitesparse_config" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
+    if ( NOT USE_SYSTEM_SUITESPARSE_CONFIG AND NOT "suitesparse_config" IN_LIST SUITESPARSE_ENABLE_PROJECTS )
         message ( STATUS "Adding \"suitesparse_config\" to the list of built targets." )
         list ( APPEND SUITESPARSE_ENABLE_PROJECTS "suitesparse_config" )
     endif ( )
