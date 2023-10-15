@@ -44,13 +44,17 @@ include ( SuiteSparsePolicy )
 #-------------------------------------------------------------------------------
 
 if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
+    option( BUILD_SHARED_LIBS "Build shared libraries" on )
+    option( BUILD_STATIC_LIBS "Build static libraries" on )
     find_package ( SuiteSparse_config 7.2.0
         PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/build NO_DEFAULT_PATH )
     if ( NOT TARGET SuiteSparse::SuiteSparseConfig )
         find_package ( SuiteSparse_config 7.2.0 REQUIRED )
     endif ( )
-    add_library ( SuiteSparseConfig ALIAS SuiteSparse::SuiteSparseConfig )
-    if ( NOT NSTATIC AND TARGET SuiteSparse::SuiteSparseConfig_static )
+    if ( BUILD_SHARED_LIBS AND TARGET SuiteSparse::SuiteSparseConfig )
+        add_library ( SuiteSparseConfig ALIAS SuiteSparse::SuiteSparseConfig )
+    endif ( )
+    if ( BUILD_STATIC_LIBS AND TARGET SuiteSparse::SuiteSparseConfig_static )
         add_library ( SuiteSparseConfig_static ALIAS SuiteSparse::SuiteSparseConfig_static )
     endif ( )
 endif ( )
@@ -74,26 +78,28 @@ include_directories ( Source Include )
 
 file ( GLOB BTF_SOURCES "Source/*.c" )
 
-add_library ( BTF SHARED ${BTF_SOURCES} )
+if ( BUILD_SHARED_LIBS )
+    add_library ( BTF SHARED ${BTF_SOURCES} )
 
-set_target_properties ( BTF PROPERTIES
-    VERSION ${BTF_VERSION_MAJOR}.${BTF_VERSION_MINOR}.${BTF_VERSION_SUB}
-    C_STANDARD 11
-    C_STANDARD_REQUIRED ON
-    OUTPUT_NAME btf
-    SOVERSION ${BTF_VERSION_MAJOR}
-    PUBLIC_HEADER "Include/btf.h" 
-    WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    set_target_properties ( BTF PROPERTIES
+        VERSION ${BTF_VERSION_MAJOR}.${BTF_VERSION_MINOR}.${BTF_VERSION_SUB}
+        C_STANDARD 11
+        C_STANDARD_REQUIRED ON
+        OUTPUT_NAME btf
+        SOVERSION ${BTF_VERSION_MAJOR}
+        PUBLIC_HEADER "Include/btf.h" 
+        WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
-target_include_directories ( BTF
-    INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Include>
-              $<INSTALL_INTERFACE:${SUITESPARSE_INCLUDEDIR}> )
+    target_include_directories ( BTF
+        INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Include>
+                  $<INSTALL_INTERFACE:${SUITESPARSE_INCLUDEDIR}> )
+endif ( )
 
 #-------------------------------------------------------------------------------
 # static btf library properties
 #-------------------------------------------------------------------------------
 
-if ( NOT NSTATIC )
+if ( BUILD_SHARED_LIBS )
     add_library ( BTF_static STATIC ${BTF_SOURCES} )
 
     set_target_properties ( BTF_static PROPERTIES
@@ -119,10 +125,12 @@ endif ( )
 #-------------------------------------------------------------------------------
 
 # SuiteSparseConfig:
-target_link_libraries ( BTF PRIVATE SuiteSparseConfig )
-target_include_directories ( BTF PUBLIC
-    "$<TARGET_PROPERTY:SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
-if ( NOT NSTATIC )
+if ( BUILD_SHARED_LIBS )
+    target_link_libraries ( BTF PRIVATE SuiteSparseConfig )
+    target_include_directories ( BTF PUBLIC
+        "$<TARGET_PROPERTY:SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
+endif ( )
+if ( BUILD_STATIC_LIBS )
     if ( TARGET SuiteSparseConfig_static )
         target_link_libraries ( BTF_static PUBLIC SuiteSparseConfig_static )
     else ( )
@@ -132,8 +140,10 @@ endif ( )
 
 # libm:
 if ( NOT WIN32 )
-    target_link_libraries ( BTF PRIVATE m )
-    if ( NOT NSTATIC )
+    if ( BUILD_SHARED_LIBS )
+        target_link_libraries ( BTF PRIVATE m )
+    endif ( )
+    if ( BUILD_STATIC_LIBS )
         set ( BTF_STATIC_LIBS "${BTF_STATIC_LIBS} -lm" )
         target_link_libraries ( BTF_static PUBLIC m )
     endif ( )
@@ -145,13 +155,15 @@ endif ( )
 
 include ( CMakePackageConfigHelpers )
 
-install ( TARGETS BTF
-    EXPORT BTFTargets
-    LIBRARY DESTINATION ${SUITESPARSE_LIBDIR}
-    ARCHIVE DESTINATION ${SUITESPARSE_LIBDIR}
-    RUNTIME DESTINATION ${SUITESPARSE_BINDIR}
-    PUBLIC_HEADER DESTINATION ${SUITESPARSE_INCLUDEDIR} )
-if ( NOT NSTATIC )
+if ( BUILD_SHARED_LIBS )
+    install ( TARGETS BTF
+        EXPORT BTFTargets
+        LIBRARY DESTINATION ${SUITESPARSE_LIBDIR}
+        ARCHIVE DESTINATION ${SUITESPARSE_LIBDIR}
+        RUNTIME DESTINATION ${SUITESPARSE_BINDIR}
+        PUBLIC_HEADER DESTINATION ${SUITESPARSE_INCLUDEDIR} )
+endif ( )
+if ( BUILD_STATIC_LIBS )
     install ( TARGETS BTF_static
         EXPORT BTFTargets
         ARCHIVE DESTINATION ${SUITESPARSE_LIBDIR} )
