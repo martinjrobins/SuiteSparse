@@ -27,6 +27,10 @@ include ( SuiteSparsePolicy )
 # build options
 #-------------------------------------------------------------------------------
 
+# build shared/static libraries
+option( BUILD_SHARED_LIBS "Build shared libraries" on )
+option( BUILD_STATIC_LIBS "Build static libraries" on )
+
 # lower-case list of all projects that can be built by this root CMake file
 set ( SUITESPARSE_ALL_PROJECTS
     "suitesparse_config;mongoose;amd;btf;camd;ccolamd;colamd;cholmod;cxsparse;ldl;klu;umfpack;rbio;spqr;graphblas;spex" )
