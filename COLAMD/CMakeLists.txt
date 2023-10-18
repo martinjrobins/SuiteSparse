@@ -48,8 +48,10 @@ if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
     if ( NOT TARGET SuiteSparse::SuiteSparseConfig )
         find_package ( SuiteSparse_config 7.2.0 REQUIRED )
     endif ( )
-    add_library ( SuiteSparseConfig ALIAS SuiteSparse::SuiteSparseConfig )
-    if ( NOT NSTATIC AND TARGET SuiteSparse::SuiteSparseConfig_static )
+    if ( BUILD_SHARED_LIBS AND TARGET SuiteSparse::SuiteSparseConfig )
+        add_library ( SuiteSparseConfig ALIAS SuiteSparse::SuiteSparseConfig )
+    endif ( )
+    if ( BUILD_SHARED_LIBS AND TARGET SuiteSparse::SuiteSparseConfig_static )
         add_library ( SuiteSparseConfig_static ALIAS SuiteSparse::SuiteSparseConfig_static )
     endif ( )
 endif ( )
@@ -74,26 +76,28 @@ include_directories ( Source Include )
 
 file ( GLOB COLAMD_SOURCES "Source/*.c" )
 
-add_library ( COLAMD SHARED ${COLAMD_SOURCES} )
+if ( BUILD_SHARED_LIBS )
+    add_library ( COLAMD SHARED ${COLAMD_SOURCES} )
 
-set_target_properties ( COLAMD PROPERTIES
-    VERSION ${COLAMD_VERSION_MAJOR}.${COLAMD_VERSION_MINOR}.${COLAMD_VERSION_SUB}
-    C_STANDARD 11
-    C_STANDARD_REQUIRED ON
-    OUTPUT_NAME colamd
-    SOVERSION ${COLAMD_VERSION_MAJOR}
-    PUBLIC_HEADER "Include/colamd.h"
-    WINDOWS_EXPORT_ALL_SYMBOLS ON )
+    set_target_properties ( COLAMD PROPERTIES
+        VERSION ${COLAMD_VERSION_MAJOR}.${COLAMD_VERSION_MINOR}.${COLAMD_VERSION_SUB}
+        C_STANDARD 11
+        C_STANDARD_REQUIRED ON
+        OUTPUT_NAME colamd
+        SOVERSION ${COLAMD_VERSION_MAJOR}
+        PUBLIC_HEADER "Include/colamd.h"
+        WINDOWS_EXPORT_ALL_SYMBOLS ON )
 
-target_include_directories ( COLAMD
-    INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Include>
-              $<INSTALL_INTERFACE:${SUITESPARSE_INCLUDEDIR}> )
+    target_include_directories ( COLAMD
+        INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Include>
+                $<INSTALL_INTERFACE:${SUITESPARSE_INCLUDEDIR}> )
+endif ( )
 
 #-------------------------------------------------------------------------------
 # static colamd library properties
 #-------------------------------------------------------------------------------
 
-if ( NOT NSTATIC )
+if ( BUILD_STATIC_LIBS )
     add_library ( COLAMD_static STATIC ${COLAMD_SOURCES} )
 
     set_target_properties ( COLAMD_static PROPERTIES
@@ -118,10 +122,12 @@ endif ( )
 # add the library dependencies
 #-------------------------------------------------------------------------------
 
-target_link_libraries ( COLAMD PRIVATE SuiteSparseConfig )
-target_include_directories ( COLAMD PUBLIC
-    "$<TARGET_PROPERTY:SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
-if ( NOT NSTATIC )
+if ( BUILD_SHARED_LIBS )
+    target_link_libraries ( COLAMD PRIVATE SuiteSparseConfig )
+    target_include_directories ( COLAMD PUBLIC
+        "$<TARGET_PROPERTY:SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
+endif ( )
+if ( BUILD_STATIC_LIBS )
     if ( TARGET SuiteSparseConfig_static )
         target_link_libraries ( COLAMD_static PUBLIC SuiteSparseConfig_static )
     else ( )
@@ -131,8 +137,10 @@ endif ( )
 
 # libm:
 if ( NOT WIN32 )
-    target_link_libraries ( COLAMD PRIVATE m )
-    if ( NOT NSTATIC )
+    if ( BUILD_SHARED_LIBS )
+        target_link_libraries ( COLAMD PRIVATE m )
+    endif ( )
+    if ( BUILD_STATIC_LIBS )
         set ( COLAMD_STATIC_LIBS "${COLAMD_STATIC_LIBS} -lm" )
         target_link_libraries ( COLAMD_static PUBLIC m )
     endif ( )
@@ -144,13 +152,15 @@ endif ( )
 
 include ( CMakePackageConfigHelpers )
 
-install ( TARGETS COLAMD
-    EXPORT COLAMDTargets
-    LIBRARY DESTINATION ${SUITESPARSE_LIBDIR}
-    ARCHIVE DESTINATION ${SUITESPARSE_LIBDIR}
-    RUNTIME DESTINATION ${SUITESPARSE_BINDIR}
-    PUBLIC_HEADER DESTINATION ${SUITESPARSE_INCLUDEDIR} )
-if ( NOT NSTATIC )
+if ( BUILD_SHARED_LIBS )
+    install ( TARGETS COLAMD
+        EXPORT COLAMDTargets
+        LIBRARY DESTINATION ${SUITESPARSE_LIBDIR}
+        ARCHIVE DESTINATION ${SUITESPARSE_LIBDIR}
+        RUNTIME DESTINATION ${SUITESPARSE_BINDIR}
+        PUBLIC_HEADER DESTINATION ${SUITESPARSE_INCLUDEDIR} )
+endif ( )
+if ( BUILD_STATIC_LIBS )
     install ( TARGETS COLAMD_static
         EXPORT COLAMDTargets
         ARCHIVE DESTINATION ${SUITESPARSE_LIBDIR} )
@@ -214,7 +224,7 @@ endif ( )
 #-------------------------------------------------------------------------------
 
 option ( DEMO "ON: Build the demo programs.  OFF (default): do not build the demo programs." off )
-if ( DEMO )
+if ( DEMO AND BUILD_SHARED_LIBS )
 
     #---------------------------------------------------------------------------
     # demo library
