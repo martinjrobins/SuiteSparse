@@ -99,7 +99,7 @@ endif ( )
 # static btf library properties
 #-------------------------------------------------------------------------------
 
-if ( BUILD_SHARED_LIBS )
+if ( BUILD_STATIC_LIBS )
     add_library ( BTF_static STATIC ${BTF_SOURCES} )
 
     set_target_properties ( BTF_static PROPERTIES

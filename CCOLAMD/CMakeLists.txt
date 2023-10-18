@@ -154,7 +154,7 @@ endif ( )
 
 include ( CMakePackageConfigHelpers )
 
-if ( BUILD BUILD_SHARED_LIBS )
+if ( BUILD_SHARED_LIBS )
     install ( TARGETS CCOLAMD
         EXPORT CCOLAMDTargets
         LIBRARY DESTINATION ${SUITESPARSE_LIBDIR}
