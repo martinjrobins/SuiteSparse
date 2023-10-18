@@ -76,13 +76,17 @@ else ( )
 endif ( )
 
 if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
+    option( BUILD_SHARED_LIBS "Build shared libraries" on )
+    option( BUILD_STATIC_LIBS "Build static libraries" on )
     find_package ( SuiteSparse_config 7.2.0
         PATHS ${CMAKE_SOURCE_DIR}/../SuiteSparse_config/build NO_DEFAULT_PATH )
     if ( NOT TARGET SuiteSparse::SuiteSparseConfig )
         find_package ( SuiteSparse_config 7.2.0 REQUIRED )
     endif ( )
-    add_library ( SuiteSparseConfig ALIAS SuiteSparse::SuiteSparseConfig )
-    if ( NOT NSTATIC AND TARGET SuiteSparse::SuiteSparseConfig_static )
+    if ( BUILD_SHARED_LIBS AND TARGET SuiteSparse::SuiteSparseConfig )
+        add_library ( SuiteSparseConfig ALIAS SuiteSparse::SuiteSparseConfig )
+    endif ( )
+    if ( BUILD_STATIC_LIBS AND TARGET SuiteSparse::SuiteSparseConfig_static )
         add_library ( SuiteSparseConfig_static ALIAS SuiteSparse::SuiteSparseConfig_static )
     endif ( )
 
@@ -91,8 +95,10 @@ if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
     if ( NOT TARGET SuiteSparse::AMD )
         find_package ( AMD 3.2.0 REQUIRED )
     endif ( )
-    add_library ( AMD ALIAS SuiteSparse::AMD )
-    if ( NOT NSTATIC AND TARGET SuiteSparse::AMD_static )
+    if ( BUILD_SHARED_LIBS AND TARGET SuiteSparse::AMD)
+        add_library ( AMD ALIAS SuiteSparse::AMD )
+    endif ( )
+    if ( BUILD_STATIC_LIBS AND TARGET SuiteSparse::AMD_static )
         add_library ( AMD_static ALIAS SuiteSparse::AMD_static )
     endif ( )
 
@@ -101,8 +107,10 @@ if ( NOT SUITESPARSE_ROOT_CMAKELISTS )
     if ( NOT TARGET SuiteSparse::COLAMD )
         find_package ( COLAMD 3.2.0 REQUIRED )
     endif ( )
-    add_library ( COLAMD ALIAS SuiteSparse::COLAMD )
-    if ( NOT NSTATIC AND TARGET SuiteSparse::COLAMD_static )
+    if ( BUILD_SHARED_LIBS AND TARGET SuiteSparse::COLAMD )
+        add_library ( COLAMD ALIAS SuiteSparse::COLAMD )
+    endif ( )
+    if ( BUILD_STATIC_LIBS AND TARGET SuiteSparse::COLAMD_static )
         add_library ( COLAMD_static ALIAS SuiteSparse::COLAMD_static )
     endif ( )
 endif ( )
@@ -213,8 +221,10 @@ endif ( )
             find_package ( CAMD 3.2.0 )
         endif ( )
         if ( CAMD_FOUND )
-            add_library ( CAMD ALIAS SuiteSparse::CAMD )
-            if ( NOT NSTATIC AND TARGET SuiteSparse::CAMD_static )
+            if ( BUILD_SHARED_LIBS AND TARGET SuiteSparse::CAMD )
+                add_library ( CAMD ALIAS SuiteSparse::CAMD )
+            endif ( )
+            if ( BUILD_STATIC_LIBS AND TARGET SuiteSparse::CAMD_static )
                 add_library ( CAMD_static ALIAS SuiteSparse::CAMD_static )
             endif ( )
         endif ( )
@@ -225,8 +235,10 @@ endif ( )
             find_package ( CCOLAMD 3.2.0 )
         endif ( )
         if ( CCOLAMD_FOUND )
-            add_library ( CCOLAMD ALIAS SuiteSparse::CCOLAMD )
-            if ( NOT NSTATIC AND TARGET SuiteSparse::SuiteSparseConfig_static )
+            if ( BUILD_SHARED_LIBS AND TARGET SuiteSparse::CCOLAMD )
+                add_library ( CCOLAMD ALIAS SuiteSparse::CCOLAMD )
+            endif ( )
+            if ( BUILD_STATIC_LIBS AND TARGET SuiteSparse::SuiteSparseConfig_static )
                 add_library ( CCOLAMD_static ALIAS SuiteSparse::CCOLAMD_static )
             endif ( )
         endif ( )
@@ -324,31 +336,33 @@ file ( GLOB CHOLMOD_SOURCES "Check/cholmod_*.c" "Cholesky/cholmod_*.c"
     "Core/cholmod_*.c" "MatrixOps/cholmod_*.c" "Modify/cholmod_*.c"
     "Partition/cholmod_*.c" "Supernodal/cholmod_*.c" )
 
-add_library ( CHOLMOD SHARED ${CHOLMOD_SOURCES} )
+if ( BUILD_SHARED_LIBS )
+    add_library ( CHOLMOD SHARED ${CHOLMOD_SOURCES} )
 
-set_target_properties ( CHOLMOD PROPERTIES
-    VERSION ${CHOLMOD_VERSION_MAJOR}.${CHOLMOD_VERSION_MINOR}.${CHOLMOD_VERSION_SUB}
-    C_STANDARD 11
-    C_STANDARD_REQUIRED ON
-    OUTPUT_NAME cholmod
-    SOVERSION ${CHOLMOD_VERSION_MAJOR}
-    PUBLIC_HEADER "Include/cholmod.h"
-    WINDOWS_EXPORT_ALL_SYMBOLS ON )
+    set_target_properties ( CHOLMOD PROPERTIES
+        VERSION ${CHOLMOD_VERSION_MAJOR}.${CHOLMOD_VERSION_MINOR}.${CHOLMOD_VERSION_SUB}
+        C_STANDARD 11
+        C_STANDARD_REQUIRED ON
+        OUTPUT_NAME cholmod
+        SOVERSION ${CHOLMOD_VERSION_MAJOR}
+        PUBLIC_HEADER "Include/cholmod.h"
+        WINDOWS_EXPORT_ALL_SYMBOLS ON )
 
-if ( SUITESPARSE_CUDA )
-    set_target_properties ( CHOLMOD PROPERTIES CUDA_SEPARABLE_COMPILATION on )
-    set_target_properties ( CHOLMOD PROPERTIES POSITION_INDEPENDENT_CODE on )
+    if ( SUITESPARSE_CUDA )
+        set_target_properties ( CHOLMOD PROPERTIES CUDA_SEPARABLE_COMPILATION on )
+        set_target_properties ( CHOLMOD PROPERTIES POSITION_INDEPENDENT_CODE on )
+    endif ( )
+
+    target_include_directories ( CHOLMOD
+        INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Include>
+                  $<INSTALL_INTERFACE:${SUITESPARSE_INCLUDEDIR}> )
 endif ( )
-
-target_include_directories ( CHOLMOD
-    INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Include>
-              $<INSTALL_INTERFACE:${SUITESPARSE_INCLUDEDIR}> )
 
 #-------------------------------------------------------------------------------
 # static cholmod library properties
 #-------------------------------------------------------------------------------
 
-if ( NOT NSTATIC )
+if ( BUILD_STATIC_LIBS )
     add_library ( CHOLMOD_static STATIC ${CHOLMOD_SOURCES} )
 
     set_target_properties ( CHOLMOD_static PROPERTIES
@@ -379,10 +393,12 @@ endif ( )
 #-------------------------------------------------------------------------------
 
 # SuiteSparseConfig:
-target_link_libraries ( CHOLMOD PRIVATE SuiteSparseConfig )
-target_include_directories ( CHOLMOD PUBLIC
-    "$<TARGET_PROPERTY:SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
-if ( NOT NSTATIC )
+if ( BUILD_SHARED_LIBS )
+    target_link_libraries ( CHOLMOD PRIVATE SuiteSparseConfig )
+    target_include_directories ( CHOLMOD PUBLIC
+        "$<TARGET_PROPERTY:SuiteSparseConfig,INTERFACE_INCLUDE_DIRECTORIES>" )
+endif ( )
+if ( BUILD_STATIC_LIBS )
     if ( TARGET SuiteSparseConfig_static )
         target_link_libraries ( CHOLMOD_static PUBLIC SuiteSparseConfig_static )
     else ( )
@@ -395,8 +411,10 @@ if ( OPENMP_FOUND )
     message ( STATUS "OpenMP C libraries:      ${OpenMP_C_LIBRARIES} ")
     message ( STATUS "OpenMP C include:        ${OpenMP_C_INCLUDE_DIRS} ")
     message ( STATUS "OpenMP C flags:          ${OpenMP_C_FLAGS} ")
-    target_link_libraries ( CHOLMOD PRIVATE ${OpenMP_C_LIBRARIES} )
-    if ( NOT NSTATIC )
+    if ( BUILD_SHARED_LIBS )
+        target_link_libraries ( CHOLMOD PRIVATE ${OpenMP_C_LIBRARIES} )
+    endif ( )
+    if ( BUILD_STATIC_LIBS )
         target_link_libraries ( CHOLMOD_static PUBLIC ${OpenMP_C_LIBRARIES} )
         list ( APPEND CHOLMOD_STATIC_LIBS ${OpenMP_C_LIBRARIES} )
     endif ( )
@@ -412,17 +430,20 @@ endif ( )
 
 # libm:
 if ( NOT WIN32 )
-    target_link_libraries ( CHOLMOD PRIVATE m )
-    if ( NOT NSTATIC )
+    if ( BUILD_SHARED_LIBS )
+        target_link_libraries ( CHOLMOD PRIVATE m )
+    endif ( )
+    if ( BUILD_STATIC_LIBS )
         list ( APPEND CHOLMOD_STATIC_LIBS "m" )
         target_link_libraries ( CHOLMOD_static PUBLIC m )
     endif ( )
 endif ( )
-        list ( APPEND CHOLMOD_STATIC_LIBS "m" )
 
 # AMD:
-target_link_libraries ( CHOLMOD PRIVATE AMD )
-if ( NOT NSTATIC )
+if ( BUILD_SHARED_LIBS )
+    target_link_libraries ( CHOLMOD PRIVATE AMD )
+endif ( )
+if ( BUILD_STATIC_LIBS )
     if ( TARGET AMD_static )
         target_link_libraries ( CHOLMOD_static PUBLIC AMD_static )
     else ( )
@@ -431,8 +452,10 @@ if ( NOT NSTATIC )
 endif ( )
 
 # COLAMD:
-target_link_libraries ( CHOLMOD PRIVATE COLAMD )
-if ( NOT NSTATIC )
+if ( BUILD_SHARED_LIBS )
+    target_link_libraries ( CHOLMOD PRIVATE COLAMD )
+endif ( )
+if ( BUILD_STATIC_LIBS )
     if ( TARGET COLAMD_static )
         target_link_libraries ( CHOLMOD_static PUBLIC COLAMD_static )
     else ( )
@@ -446,8 +469,10 @@ if ( NOT NSUPERNODAL )
     message ( STATUS "LAPACK libraries:    ${LAPACK_LIBRARIES} ")
     message ( STATUS "LAPACK include:      ${LAPACK_INCLUDE_DIRS} ")
     message ( STATUS "LAPACK linker flags: ${LAPACK_LINKER_FLAGS} ")
-    target_link_libraries ( CHOLMOD PRIVATE ${LAPACK_LIBRARIES} )
-    if ( NOT NSTATIC )
+    if ( BUILD_SHARED_LIBS )
+        target_link_libraries ( CHOLMOD PRIVATE ${LAPACK_LIBRARIES} )
+    endif ( )
+    if ( BUILD_STATIC_LIBS )
         list ( APPEND CHOLMOD_STATIC_LIBS ${LAPACK_LIBRARIES} )
         target_link_libraries ( CHOLMOD_static PUBLIC ${LAPACK_LIBRARIES} )
     endif ( )
@@ -457,8 +482,10 @@ if ( NOT NSUPERNODAL )
     message ( STATUS "BLAS libraries:      ${BLAS_LIBRARIES} ")
     message ( STATUS "BLAS include:        ${BLAS_INCLUDE_DIRS} ")
     message ( STATUS "BLAS linker flags:   ${BLAS_LINKER_FLAGS} ")
-    target_link_libraries ( CHOLMOD PRIVATE ${BLAS_LIBRARIES} )
-    if ( NOT NSTATIC )
+    if ( BUILD_SHARED_LIBS )
+        target_link_libraries ( CHOLMOD PRIVATE ${BLAS_LIBRARIES} )
+    endif ( )
+    if ( BUILD_STATIC_LIBS )
         list ( APPEND CHOLMOD_STATIC_LIBS ${BLAS_LIBRARIES} )
         target_link_libraries ( CHOLMOD_static PUBLIC ${BLAS_LIBRARIES} )
     endif ( )
@@ -467,8 +494,10 @@ endif ( )
 
 # CAMD and CCOLAMD:
 if ( NOT NCAMD )
-    target_link_libraries ( CHOLMOD PRIVATE CAMD )
-    if ( NOT NSTATIC )
+    if ( BUILD_SHARED_LIBS )
+        target_link_libraries ( CHOLMOD PRIVATE CAMD )
+    endif ( )
+    if ( BUILD_STATIC_LIBS )
         set ( CHOLMOD_STATIC_MODULES "${CHOLMOD_STATIC_MODULES} CAMD" )
         if ( TARGET CAMD_static )
             target_link_libraries ( CHOLMOD_static PUBLIC CAMD_static )
@@ -477,8 +506,10 @@ if ( NOT NCAMD )
         endif ( )
     endif ( )
 
-    target_link_libraries ( CHOLMOD PRIVATE CCOLAMD )
-    if ( NOT NSTATIC )
+    if ( BUILD_SHARED_LIBS )
+        target_link_libraries ( CHOLMOD PRIVATE CCOLAMD )
+    endif ( )
+    if ( BUILD_STATIC_LIBS )
         set ( CHOLMOD_STATIC_MODULES "${CHOLMOD_STATIC_MODULES} CCOLAMD" )
         if ( TARGET CCOLAMD_static )
             target_link_libraries ( CHOLMOD_static PUBLIC CCOLAMD_static )
@@ -497,19 +528,23 @@ endif ( )
 
 # CHOLMOD_CUDA
 if ( SUITESPARSE_CUDA )
-    target_link_libraries ( CHOLMOD PRIVATE CHOLMOD_CUDA ${CUDA_LIBRARIES} )
-    set ( CHOLMOD_STATIC_MODULES "${CHOLMOD_STATIC_MODULES} CHOLMOD_CUDA" )
-    set ( CHOLMOD_CFLAGS "${CHOLMOD_CFLAGS} -DSUITESPARSE_CUDA" )
-    target_compile_definitions ( CHOLMOD PUBLIC "SUITESPARSE_CUDA" )
-    if ( NOT NSTATIC )
+    if ( BUILD_SHARED_LIBS )
+        target_link_libraries ( CHOLMOD PRIVATE CHOLMOD_CUDA ${CUDA_LIBRARIES} )
+        set ( CHOLMOD_STATIC_MODULES "${CHOLMOD_STATIC_MODULES} CHOLMOD_CUDA" )
+        set ( CHOLMOD_CFLAGS "${CHOLMOD_CFLAGS} -DSUITESPARSE_CUDA" )
+        target_compile_definitions ( CHOLMOD PUBLIC "SUITESPARSE_CUDA" )
+    endif ( )
+    if ( BUILD_STATIC_LIBS )
         target_link_libraries ( CHOLMOD_static PUBLIC CHOLMOD_CUDA_static ${CUDA_LIBRARIES} )
         target_compile_definitions ( CHOLMOD_static PUBLIC "SUITESPARSE_CUDA" )
     endif ( )
-    target_link_libraries ( CHOLMOD PRIVATE CUDA::nvrtc CUDA::cudart_static
-        CUDA::nvToolsExt CUDA::cublas )
-    target_include_directories ( CHOLMOD INTERFACE
-        $<TARGET_PROPERTY:CUDA::cublas,INTERFACE_INCLUDE_DIRECTORIES> )
-    if ( NOT NSTATIC )
+    if ( BUILD_SHARED_LIBS )
+        target_link_libraries ( CHOLMOD PRIVATE CUDA::nvrtc CUDA::cudart_static
+            CUDA::nvToolsExt CUDA::cublas )
+        target_include_directories ( CHOLMOD INTERFACE
+            $<TARGET_PROPERTY:CUDA::cublas,INTERFACE_INCLUDE_DIRECTORIES> )
+    endif ( )
+    if ( BUILD_STATIC_LIBS )
         target_link_libraries ( CHOLMOD_static PUBLIC CUDA::nvrtc CUDA::cudart_static
             CUDA::nvToolsExt CUDA::cublas )
     endif ( )
@@ -520,8 +555,10 @@ if ( SUITESPARSE_CUDA )
     set ( CMAKE_EXTRA_INCLUDE_FILES old_CMAKE_EXTRA_INCLUDE_FILES )
 
     if ( NOT HAVE_COMPAR_FN_T )
-        target_compile_definitions ( CHOLMOD PRIVATE NCOMPAR_FN_T )
-        if ( NOT NSTATIC )
+        if ( BUILD_SHARED_LIBS )
+            target_compile_definitions ( CHOLMOD PRIVATE NCOMPAR_FN_T )
+        endif ( )
+        if ( BUILD_STATIC_LIBS )
             target_compile_definitions ( CHOLMOD_static PRIVATE NCOMPAR_FN_T )
         endif ( )
     endif ( )
@@ -534,13 +571,15 @@ endif ( )
 
 include ( CMakePackageConfigHelpers )
 
-install ( TARGETS CHOLMOD
-    EXPORT CHOLMODTargets
-    LIBRARY DESTINATION ${SUITESPARSE_LIBDIR}
-    ARCHIVE DESTINATION ${SUITESPARSE_LIBDIR}
-    RUNTIME DESTINATION ${SUITESPARSE_BINDIR}
-    PUBLIC_HEADER DESTINATION ${SUITESPARSE_INCLUDEDIR} )
-if ( NOT NSTATIC )
+if ( BUILD_SHARED_LIBS )
+    install ( TARGETS CHOLMOD
+        EXPORT CHOLMODTargets
+        LIBRARY DESTINATION ${SUITESPARSE_LIBDIR}
+        ARCHIVE DESTINATION ${SUITESPARSE_LIBDIR}
+        RUNTIME DESTINATION ${SUITESPARSE_BINDIR}
+        PUBLIC_HEADER DESTINATION ${SUITESPARSE_INCLUDEDIR} )
+endif ( )
+if ( BUILD_STATIC_LIBS )
     install ( TARGETS CHOLMOD_static
         EXPORT CHOLMODTargets
         ARCHIVE DESTINATION ${SUITESPARSE_LIBDIR} )
@@ -640,7 +679,7 @@ endif ( )
 #-------------------------------------------------------------------------------
 
 option ( DEMO "ON: Build the demo programs.  OFF (default): do not build the demo programs." off )
-if ( DEMO )
+if ( DEMO AND BUILD_SHARED_LIBS )
 
     #---------------------------------------------------------------------------
     # demo library
