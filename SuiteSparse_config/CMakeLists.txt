@@ -110,7 +110,8 @@ if ( BUILD_STATIC_LIBS )
         C_STANDARD 11
         C_STANDARD_REQUIRED ON
         OUTPUT_NAME suitesparseconfig
-        SOVERSION ${SUITESPARSE_VERSION_MAJOR} )
+        SOVERSION ${SUITESPARSE_VERSION_MAJOR}
+        PUBLIC_HEADER "SuiteSparse_config.h" )
 
     if ( MSVC )
         set_target_properties ( SuiteSparseConfig_static PROPERTIES
@@ -184,7 +185,8 @@ install ( FILES
 if ( BUILD_STATIC_LIBS )
     install ( TARGETS SuiteSparseConfig_static
         EXPORT SuiteSparse_configTargets
-        ARCHIVE DESTINATION ${SUITESPARSE_LIBDIR} )
+        ARCHIVE DESTINATION ${SUITESPARSE_LIBDIR}
+        PUBLIC_HEADER DESTINATION ${SUITESPARSE_INCLUDEDIR} )
 endif ( )
 
 # create (temporary) export target file during build
