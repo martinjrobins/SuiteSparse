@@ -107,7 +107,8 @@ if ( BUILD_STATIC_LIBS )
         C_STANDARD 11
         C_STANDARD_REQUIRED ON
         OUTPUT_NAME btf
-        SOVERSION ${BTF_VERSION_MAJOR} )
+        SOVERSION ${BTF_VERSION_MAJOR}
+        PUBLIC_HEADER "Include/btf.h" )
 
     if ( MSVC )
         set_target_properties ( BTF_static PROPERTIES
@@ -166,7 +167,8 @@ endif ( )
 if ( BUILD_STATIC_LIBS )
     install ( TARGETS BTF_static
         EXPORT BTFTargets
-        ARCHIVE DESTINATION ${SUITESPARSE_LIBDIR} )
+        ARCHIVE DESTINATION ${SUITESPARSE_LIBDIR}
+        PUBLIC_HEADER DESTINATION ${SUITESPARSE_INCLUDEDIR} )
 endif ( )
 
 # create (temporary) export target file during build

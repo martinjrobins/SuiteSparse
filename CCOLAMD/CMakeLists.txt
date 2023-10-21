@@ -107,7 +107,8 @@ if ( BUILD_STATIC_LIBS )
         OUTPUT_NAME ccolamd
         C_STANDARD 11
         C_STANDARD_REQUIRED ON
-        SOVERSION ${CCOLAMD_VERSION_MAJOR} )
+        SOVERSION ${CCOLAMD_VERSION_MAJOR}
+        PUBLIC_HEADER "Include/ccolamd.h" )
 
     if ( MSVC )
         set_target_properties ( CCOLAMD_static PROPERTIES
@@ -165,7 +166,8 @@ endif ( )
 if ( BUILD_STATIC_LIBS )
     install ( TARGETS CCOLAMD_static
         EXPORT CCOLAMDTargets
-        ARCHIVE DESTINATION ${SUITESPARSE_LIBDIR} )
+        ARCHIVE DESTINATION ${SUITESPARSE_LIBDIR}
+        PUBLIC_HEADER DESTINATION ${SUITESPARSE_INCLUDEDIR} )
 endif ( )
 
 # create (temporary) export target file during build

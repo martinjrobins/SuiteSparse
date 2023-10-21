@@ -110,7 +110,8 @@ if ( BUILD_STATIC_LIBS )
         C_STANDARD 11
         C_STANDARD_REQUIRED ON
         OUTPUT_NAME camd
-        SOVERSION ${CAMD_VERSION_MAJOR} )
+        SOVERSION ${CAMD_VERSION_MAJOR}
+        PUBLIC_HEADER "Include/camd.h" )
 
     if ( MSVC )
         set_target_properties ( CAMD_static PROPERTIES
@@ -168,7 +169,8 @@ endif ( )
 if ( BUILD_STATIC_LIBS )
     install ( TARGETS CAMD_static
         EXPORT CAMDTargets
-        ARCHIVE DESTINATION ${SUITESPARSE_LIBDIR} )
+        ARCHIVE DESTINATION ${SUITESPARSE_LIBDIR}
+        PUBLIC_HEADER DESTINATION ${SUITESPARSE_INCLUDEDIR} )
 endif ( )
 
 # create (temporary) export target file during build
