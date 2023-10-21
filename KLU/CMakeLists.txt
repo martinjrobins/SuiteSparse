@@ -218,7 +218,8 @@ if ( BUILD_STATIC_LIBS )
         C_STANDARD 11
         C_STANDARD_REQUIRED ON
         OUTPUT_NAME klu
-        SOVERSION ${KLU_VERSION_MAJOR} )
+        SOVERSION ${KLU_VERSION_MAJOR} 
+        PUBLIC_HEADER "Include/klu.h" )
 
     if ( MSVC )
         set_target_properties ( KLU_static PROPERTIES
@@ -471,7 +472,8 @@ if ( NOT NCHOLMOD )
     if ( BUILD_STATIC_LIBS )
         install ( TARGETS KLU_CHOLMOD_static
             EXPORT KLU_CHOLMODTargets
-            ARCHIVE DESTINATION ${SUITESPARSE_LIBDIR} )
+            ARCHIVE DESTINATION ${SUITESPARSE_LIBDIR}
+            PUBLIC_HEADER DESTINATION ${SUITESPARSE_INCLUDEDIR} )
     endif ( )
 
     # create (temporary) export target file during build
