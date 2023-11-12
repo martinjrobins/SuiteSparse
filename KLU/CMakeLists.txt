@@ -400,7 +400,8 @@ endif ( )
 if ( BUILD_STATIC_LIBS )
     install ( TARGETS KLU_static
         EXPORT KLUTargets
-        ARCHIVE DESTINATION ${SUITESPARSE_LIBDIR} )
+        ARCHIVE DESTINATION ${SUITESPARSE_LIBDIR}
+        PUBLIC_HEADER DESTINATION ${SUITESPARSE_INCLUDEDIR} )
 endif ( )
 
 # create (temporary) export target file during build
